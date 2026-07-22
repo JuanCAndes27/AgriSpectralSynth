@@ -1,0 +1,55 @@
+general:
+
+  project_name: AgriSpectralSynth
+
+  random_seed: 42
+
+  verbose: true
+
+sensor:
+
+  name: DJI_Mavic_3_Multispectral
+
+  altitude: 120
+
+  gsd: 0.05
+
+simulation:
+
+  generate_red: true
+
+  generate_nir: true
+
+  generate_ndvi: true
+
+  generate_gndvi: true
+
+  generate_savi: true
+
+  generate_msavi: true
+
+  generate_evi: true
+
+  noise_std: 0.01
+
+  jpeg_quality: 95
+
+vegetation:
+
+  healthy: 0.70
+
+  stressed: 0.15
+
+  dry: 0.10
+
+  dead: 0.05
+
+output:
+
+  export_format: jpg
+
+  save_masks: true
+
+  save_yolo: true
+
+  save_reports: true

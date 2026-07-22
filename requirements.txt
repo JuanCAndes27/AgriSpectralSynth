@@ -1,0 +1,49 @@
+===============================
+
+AgriSpectralSynth Requirements
+
+===============================
+
+Numerical Computing
+
+numpy>=1.26 scipy>=1.12
+
+Computer Vision
+
+opencv-python>=4.10
+
+Geospatial
+
+rasterio>=1.4
+
+Image Processing
+
+Pillow>=10.0
+
+Plotting
+
+matplotlib>=3.9
+
+Data Analysis
+
+pandas>=2.2
+
+Progress Bars
+
+tqdm>=4.66
+
+Configuration
+
+PyYAML>=6.0
+
+Machine Learning
+
+scikit-learn>=1.5
+
+Optional Notebook Support
+
+jupyter>=1.1 notebook>=7.2 ipykernel>=6.29
+
+Utilities
+
+typing_extensions>=4.12

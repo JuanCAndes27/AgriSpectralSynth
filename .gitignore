@@ -1,0 +1,86 @@
+============================
+
+AgriSpectralSynth .gitignore
+
+============================
+
+Python
+
+pycache/ .py[cod] $py.class
+
+C extensions
+
+*.so
+
+Virtual environments
+
+.venv/ venv/ env/ ENV/
+
+Distribution
+
+build/ dist/ *.egg-info/ .eggs/
+
+IDEs
+
+.vscode/ .idea/
+
+Jupyter
+
+.ipynb_checkpoints/
+
+OS files
+
+.DS_Store Thumbs.db desktop.ini
+
+Logs
+
+*.log logs/
+
+Temporary files
+
+.tmp .temp .bak .swp
+
+Python cache
+
+.pytest_cache/ .mypy_cache/ .cache/
+
+Coverage
+
+.coverage htmlcov/
+
+Generated outputs
+
+output/ outputs/ results/ runs/ exports/
+
+Synthetic datasets
+
+datasets/generated/ datasets/tmp/
+
+Model weights
+
+.pt .pth .onnx .engine
+
+TensorBoard
+
+events.out.tfevents.*
+
+Raster auxiliary files
+
+.aux.xml .ovr
+
+QGIS
+
+.qgz~ .qgs~
+
+Environment variables
+
+.env .env.*
+
+Local configuration
+
+config.local.py
+
+Keep project structure
+
+!assets/.gitkeep !notebooks/.gitkeep !spectral_library/.gitkeep
+!src/vegetation/.gitkeep
