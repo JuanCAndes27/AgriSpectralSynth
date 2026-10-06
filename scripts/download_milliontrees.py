@@ -1,113 +1,40 @@
 #!/usr/bin/env python3
 """
-===========================================================
-AgriSpectralSynth
+Download MillionTrees (TreePolygons) and prepare RGB images, polygon
+annotations, ground-truth crown masks and metadata.
 
-Download and Prepare MillionTrees Dataset
+    pip install -e ".[milliontrees]"        # Python 3.10 - 3.12
+    python scripts/download_milliontrees.py --version mini --limit 100
 
-Author:
-Juan Carlos Vega
-OpenAI Collaboration
+Then generate the synthetic products:
 
-License:
-MIT
-===========================================================
+    agrispectralsynth -i datasets/milliontrees/rgb -o data/processed
 """
 
-from pathlib import Path
 import argparse
+import logging
 import sys
 
-from datasets.milliontrees import MillionTreesDataset
+from agrispectralsynth.datasets import MillionTreesDataset
 
 
-# ---------------------------------------------------------
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Download and prepare the MillionTrees dataset.")
+    parser.add_argument("--version", default="mini", choices=["mini", "small", "full"])
+    parser.add_argument("--output", default="datasets/milliontrees")
+    parser.add_argument("--limit", default=100, type=int, help="Number of images to prepare")
+    args = parser.parse_args()
 
-def banner():
+    logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
+    try:
+        MillionTreesDataset(args.output, version=args.version).run(limit=args.limit)
+    except KeyboardInterrupt:
+        print("\nCancelled by user.")
+    except ImportError as e:
+        print(f"\nERROR: {e}")
+        return 1
+    return 0
 
-    print("\n" + "=" * 65)
-    print("AgriSpectralSynth")
-    print("MillionTrees Downloader")
-    print("=" * 65)
-
-
-# ---------------------------------------------------------
-
-def parse_arguments():
-
-    parser = argparse.ArgumentParser(
-        description="Download MillionTrees dataset."
-    )
-
-    parser.add_argument(
-        "--version",
-        default="small",
-        choices=["mini", "small", "full"],
-        help="Dataset version."
-    )
-
-    parser.add_argument(
-        "--output",
-        default="datasets/milliontrees",
-        help="Output directory."
-    )
-
-    parser.add_argument(
-        "--limit",
-        default=100,
-        type=int,
-        help="Maximum number of RGB images to prepare."
-    )
-
-    return parser.parse_args()
-
-
-# ---------------------------------------------------------
-
-def main():
-
-    args = parse_arguments()
-
-    banner()
-
-    print(f"Version : {args.version}")
-    print(f"Output  : {args.output}")
-    print(f"Limit   : {args.limit} images\n")
-
-    dataset = MillionTreesDataset(
-        root_dir=args.output,
-        version=args.version
-    )
-
-    print("[1/4] Downloading dataset...")
-    dataset.download()
-
-    print("[2/4] Preparing folder structure...")
-    dataset.prepare()
-
-    print("[3/4] Reading metadata...")
-    dataset.statistics()
-
-    print("[4/4] Selecting first images...")
-    dataset.select_images(limit=args.limit)
-
-    print("\nDataset ready.\n")
-
-
-# ---------------------------------------------------------
 
 if __name__ == "__main__":
-
-    try:
-
-        main()
-
-    except KeyboardInterrupt:
-
-        print("\nCancelled by user.")
-        sys.exit(0)
-
-    except Exception as e:
-
-        print(f"\nERROR:\n{e}")
-        sys.exit(1)
+    sys.exit(main())

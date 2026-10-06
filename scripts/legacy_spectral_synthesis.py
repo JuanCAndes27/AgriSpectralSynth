@@ -1,3 +1,15 @@
+"""
+OBSOLETO - script original de v0.1 (antes estaba en tests/test_spectral_synthesis.py).
+
+Se conserva sólo como referencia. Usa en su lugar:
+
+    python scripts/generate_synthetic.py
+    python scripts/generate_synthetic.py --model legacy --cmap jet   # mismo aspecto que este script
+
+Problemas de este script: ruta fija D:/, procesamiento secuencial, colormap
+de matplotlib por píxel (lento), fórmula NIR = 1.6G - 0.4R + 0.1 que da NDVI
+casi igual a árboles y suelo, y GeoTIFF sin la georreferencia de la imagen.
+"""
 import sys
 import os
 from pathlib import Path

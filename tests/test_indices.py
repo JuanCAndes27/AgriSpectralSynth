@@ -1,124 +1,91 @@
 """
-===========================================================
-AgriSpectralSynth
+AgriSpectralSynth - unit tests for the vegetation indices.
 
-Unit Tests
-Vegetation Indices
-
-Author:
-Juan Carlos Vega
-OpenAI Collaboration
-
-License:
-MIT
-===========================================================
+Bands are passed by keyword so a swapped argument order (a bug in the
+previous version of these tests) cannot go unnoticed.
 """
 
 import numpy as np
+import pytest
 
-from agrispectralsynth.indices.ndvi import NDVI
-from agrispectralsynth.indices.gndvi import GNDVI
-from agrispectralsynth.indices.savi import SAVI
-from agrispectralsynth.indices.evi import EVI
-from agrispectralsynth.indices.msavi import MSAVI
+from agrispectralsynth.indices import EVI, GNDVI, INDEX_REGISTRY, MSAVI, NDRE, NDVI, SAVI
 
-
-# ---------------------------------------------------------
-# NDVI
-# ---------------------------------------------------------
-
-def test_ndvi_shape():
-
-    nir = np.ones((100, 100), dtype=np.float32)
-    red = np.ones((100, 100), dtype=np.float32)
-
-    ndvi = NDVI.compute(nir, red)
-
-    assert ndvi.shape == nir.shape
+rng = np.random.default_rng(0)
 
 
-def test_ndvi_range():
-
-    nir = np.random.rand(100,100).astype(np.float32)
-    red = np.random.rand(100,100).astype(np.float32)
-
-    ndvi = NDVI.compute(nir, red)
-
-    assert np.all(ndvi >= -1.0)
-    assert np.all(ndvi <= 1.0)
+def bands(shape=(64, 64)):
+    return {k: rng.random(shape, dtype=np.float32) for k in ("Blue", "Green", "Red", "RedEdge", "NIR")}
 
 
-# ---------------------------------------------------------
-# GNDVI
-# ---------------------------------------------------------
-
-def test_gndvi_range():
-
-    nir = np.random.rand(64,64).astype(np.float32)
-    green = np.random.rand(64,64).astype(np.float32)
-
-    gndvi = GNDVI.compute(nir, green)
-
-    assert np.min(gndvi) >= -1
-    assert np.max(gndvi) <= 1
+def test_ndvi_known_values():
+    red = np.array([[0.1, 0.5]], dtype=np.float32)
+    nir = np.array([[0.5, 0.1]], dtype=np.float32)
+    ndvi = NDVI().compute(red=red, nir=nir)
+    np.testing.assert_allclose(ndvi, [[2 / 3, -2 / 3]], atol=1e-5)
 
 
-# ---------------------------------------------------------
-# SAVI
-# ---------------------------------------------------------
-
-def test_savi_shape():
-
-    nir = np.random.rand(32,32).astype(np.float32)
-    red = np.random.rand(32,32).astype(np.float32)
-
-    savi = SAVI.compute(nir, red)
-
-    assert savi.shape == nir.shape
+def test_ndvi_vegetation_is_positive():
+    ndvi = NDVI().compute(red=np.full((4, 4), 0.05), nir=np.full((4, 4), 0.45))
+    assert np.all(ndvi > 0.7)
 
 
-# ---------------------------------------------------------
-# EVI
-# ---------------------------------------------------------
-
-def test_evi_shape():
-
-    nir = np.random.rand(50,50).astype(np.float32)
-    red = np.random.rand(50,50).astype(np.float32)
-    blue = np.random.rand(50,50).astype(np.float32)
-
-    evi = EVI.compute(nir, red, blue)
-
-    assert evi.shape == nir.shape
+def test_ndvi_zero_bands_no_nan():
+    ndvi = NDVI().compute(red=np.zeros((8, 8)), nir=np.zeros((8, 8)))
+    assert not np.isnan(ndvi).any()
+    assert np.all(ndvi == 0)
 
 
-# ---------------------------------------------------------
-# MSAVI
-# ---------------------------------------------------------
-
-def test_msavi_shape():
-
-    nir = np.random.rand(80,80).astype(np.float32)
-    red = np.random.rand(80,80).astype(np.float32)
-
-    msavi = MSAVI.compute(nir, red)
-
-    assert msavi.shape == nir.shape
+@pytest.mark.parametrize("name", list(INDEX_REGISTRY))
+def test_registry_indices_shape_range_dtype(name):
+    cls, needed = INDEX_REGISTRY[name]
+    b = bands((50, 40))
+    out = cls().compute(*(b[k] for k in needed))
+    assert out.shape == (50, 40)
+    assert out.dtype == np.float32
+    assert not np.isnan(out).any()
+    assert out.min() >= -1.0 and out.max() <= 1.0
 
 
-# ---------------------------------------------------------
-# NaN verification
-# ---------------------------------------------------------
+def test_gndvi_ndre_formulas():
+    g, re, nir = np.float32(0.1), np.float32(0.2), np.float32(0.5)
+    assert GNDVI().compute(green=np.array([g]), nir=np.array([nir]))[0] == pytest.approx(0.4 / 0.6, abs=1e-5)
+    assert NDRE().compute(red_edge=np.array([re]), nir=np.array([nir]))[0] == pytest.approx(0.3 / 0.7, abs=1e-5)
 
-def test_indices_without_nan():
 
-    nir = np.random.rand(100,100).astype(np.float32)
-    red = np.random.rand(100,100).astype(np.float32)
-    green = np.random.rand(100,100).astype(np.float32)
-    blue = np.random.rand(100,100).astype(np.float32)
+def test_savi_reduces_to_scaled_ndvi_when_L_zero():
+    b = bands()
+    np.testing.assert_allclose(
+        SAVI(L=0.0).compute(b["Red"], b["NIR"]),
+        NDVI(epsilon=0).compute(b["Red"], b["NIR"]),
+        atol=1e-4,
+    )
 
-    assert not np.isnan(NDVI.compute(nir,red)).any()
-    assert not np.isnan(GNDVI.compute(nir,green)).any()
-    assert not np.isnan(SAVI.compute(nir,red)).any()
-    assert not np.isnan(EVI.compute(nir,red,blue)).any()
-    assert not np.isnan(MSAVI.compute(nir,red)).any()
+
+def test_msavi_no_nan_extremes():
+    red = np.array([0.0, 1.0, 0.0, 1.0], dtype=np.float32)
+    nir = np.array([0.0, 0.0, 1.0, 1.0], dtype=np.float32)
+    assert not np.isnan(MSAVI().compute(red, nir)).any()
+
+
+def test_evi_handles_zero_denominator():
+    # nir + 6*red - 7.5*blue + 1 == 0
+    out = EVI().compute(blue=np.array([0.2]), red=np.array([0.0]), nir=np.array([0.5]))
+    assert np.isfinite(out).all()
+
+
+def test_colorize_and_uint8():
+    ndvi = np.linspace(-1, 1, 100, dtype=np.float32).reshape(10, 10)
+    idx = NDVI()
+    assert idx.to_uint8(ndvi).dtype == np.uint8
+    rgb = idx.colorize(ndvi)
+    assert rgb.shape == (10, 10, 3) and rgb.dtype == np.uint8
+
+
+def test_save_geotiff_roundtrip(tmp_path):
+    import rasterio
+
+    ndvi = np.random.default_rng(1).uniform(-1, 1, (20, 30)).astype(np.float32)
+    f = tmp_path / "ndvi.tif"
+    NDVI().save_geotiff(ndvi, f)
+    with rasterio.open(f) as src:
+        np.testing.assert_array_equal(src.read(1), ndvi)

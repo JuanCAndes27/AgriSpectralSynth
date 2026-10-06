@@ -1,120 +1,47 @@
 """
-===========================================================
-AgriSpectralSynth
+AgriSpectralSynth - DJI Mavic 3 Multispectral sensor.
 
-Unit Tests
-DJI Mavic 3 Multispectral Sensor
-
-Author:
-Juan Carlos Vega
-OpenAI Collaboration
-
-License:
-MIT
-===========================================================
+Reference: DJI Mavic 3M multispectral camera
+G 560±16, R 650±16, RE 730±16, NIR 860±26 nm (no multispectral blue band).
 """
 
-import pytest
-
-from agrispectralsynth.sensors.dji_mavic3m import DJIMavic3Multispectral
+from agrispectralsynth.sensors import DJIMavic3M, DJIMavic3Multispectral, SpectralBand
 
 
-# ---------------------------------------------------------
-# Sensor creation
-# ---------------------------------------------------------
+def test_alias_is_same_class():
+    assert DJIMavic3Multispectral is DJIMavic3M
 
-def test_sensor_creation():
-
-    sensor = DJIMavic3Multispectral()
-
-    assert sensor is not None
-
-
-# ---------------------------------------------------------
-# Sensor name
-# ---------------------------------------------------------
 
 def test_sensor_name():
+    assert DJIMavic3M().name == "DJI Mavic 3 Multispectral"
 
-    sensor = DJIMavic3Multispectral()
-
-    assert sensor.name == "DJI Mavic 3 Multispectral"
-
-
-# ---------------------------------------------------------
-# Number of spectral bands
-# ---------------------------------------------------------
 
 def test_number_of_bands():
-
-    sensor = DJIMavic3Multispectral()
-
-    assert len(sensor.bands) == 5
+    assert len(DJIMavic3M().bands) == 4
 
 
-# ---------------------------------------------------------
-# RGB Band
-# ---------------------------------------------------------
-
-def test_green_band():
-
-    sensor = DJIMavic3Multispectral()
-
-    assert sensor.bands["green"] == 560
+def test_band_centres():
+    s = DJIMavic3M()
+    assert s.green == 560
+    assert s.red == 650
+    assert s.red_edge == 730
+    assert s.nir == 860
 
 
-def test_red_band():
-
-    sensor = DJIMavic3Multispectral()
-
-    assert sensor.bands["red"] == 650
+def test_no_multispectral_blue():
+    assert not DJIMavic3M().has_band("Blue")
 
 
-def test_red_edge_band():
+def test_bandwidths():
+    s = DJIMavic3M()
+    assert s.band("NIR").bandwidth == 52
+    assert all(isinstance(b, SpectralBand) for b in s.bands.values())
 
-    sensor = DJIMavic3Multispectral()
-
-    assert sensor.bands["red_edge"] == 730
-
-
-def test_nir_band():
-
-    sensor = DJIMavic3Multispectral()
-
-    assert sensor.bands["nir"] == 860
-
-
-# ---------------------------------------------------------
-# Band validity
-# ---------------------------------------------------------
 
 def test_band_range():
+    for band in DJIMavic3M().bands.values():
+        assert 400 <= band.center <= 900
 
-    sensor = DJIMavic3Multispectral()
-
-    for wavelength in sensor.bands.values():
-
-        assert 400 <= wavelength <= 900
-
-
-# ---------------------------------------------------------
-# String representation
-# ---------------------------------------------------------
 
 def test_string_representation():
-
-    sensor = DJIMavic3Multispectral()
-
-    assert isinstance(str(sensor), str)
-
-
-# ---------------------------------------------------------
-# Sensor metadata
-# ---------------------------------------------------------
-
-def test_sensor_has_metadata():
-
-    sensor = DJIMavic3Multispectral()
-
-    assert hasattr(sensor, "bands")
-    assert hasattr(sensor, "name")
+    assert "4" in repr(DJIMavic3M())

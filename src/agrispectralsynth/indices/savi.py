@@ -1,84 +1,24 @@
 """
-SAVI module.
+SAVI - Soil Adjusted Vegetation Index (Huete, 1988).
 
-Soil Adjusted Vegetation Index
+    SAVI = (1 + L) * (NIR - Red) / (NIR + Red + L)
 """
 
 from __future__ import annotations
 
-from pathlib import Path
-
-import cv2
 import numpy as np
-import rasterio
-from rasterio.transform import Affine
+
+from .base import VegetationIndex
 
 
-class SAVI:
+class SAVI(VegetationIndex):
+    name = "SAVI"
+    formula = "(1 + L) * (NIR - RED) / (NIR + RED + L)"
 
-    def __init__(self, L=0.5):
-
+    def __init__(self, L: float = 0.5, epsilon: float = 1e-6):
+        super().__init__(epsilon)
         self.L = L
 
-    def compute(self, red, nir):
-
-        red = red.astype(np.float32)
-
-        nir = nir.astype(np.float32)
-
-        savi = ((nir - red) / (nir + red + self.L)) * (1 + self.L)
-
-        return np.clip(savi, -1, 1)
-
-    def normalize(self, image):
-
-        return (image + 1) / 2
-
-    def to_uint8(self, image):
-
-        return (255 * self.normalize(image)).astype(np.uint8)
-
-    def colorize(self, image):
-
-        img = self.to_uint8(image)
-
-        img = cv2.applyColorMap(img, cv2.COLORMAP_TURBO)
-
-        return cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-
-    def save_jpg(self, image, filename, color=False):
-
-        filename = Path(filename)
-
-        if color:
-
-            img = self.colorize(image)
-
-            img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-
-        else:
-
-            img = self.to_uint8(image)
-
-        cv2.imwrite(str(filename), img)
-
-    def save_geotiff(self, image, filename):
-
-        filename = Path(filename)
-
-        image = image.astype(np.float32)
-
-        with rasterio.open(
-            filename,
-            "w",
-            driver="GTiff",
-            width=image.shape[1],
-            height=image.shape[0],
-            count=1,
-            dtype="float32",
-            transform=Affine.identity(),
-            crs=None,
-            compress="lzw",
-        ) as dst:
-
-            dst.write(image, 1)
+    def compute(self, red: np.ndarray, nir: np.ndarray) -> np.ndarray:
+        red, nir = self._f32(red, nir)
+        return self._finish((1.0 + self.L) * (nir - red) / (nir + red + self.L))

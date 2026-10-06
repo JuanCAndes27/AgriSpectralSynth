@@ -90,18 +90,16 @@ SUPPORTED_SENSORS = (
 # Central wavelength (nm)
 # =============================================================================
 
-BAND_BLUE = 475
-
+# Mavic 3M multispectral camera (no blue band; blue comes from the RGB camera)
 BAND_GREEN = 560
 
-BAND_RED = 668
+BAND_RED = 650
 
-BAND_RED_EDGE = 717
+BAND_RED_EDGE = 730
 
-BAND_NIR = 842
+BAND_NIR = 860
 
 DJI_BANDS = {
-    "Blue": BAND_BLUE,
     "Green": BAND_GREEN,
     "Red": BAND_RED,
     "RedEdge": BAND_RED_EDGE,
