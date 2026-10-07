@@ -1,55 +1,68 @@
 general:
-
   project_name: AgriSpectralSynth
-
-  random_seed: 42
-
+  random_seed: 42          # el ruido de cada imagen se siembra con seed + nombre de archivo
   verbose: true
 
 sensor:
-
   name: DJI_Mavic_3_Multispectral
-
   altitude: 120
-
   gsd: 0.05
 
 simulation:
-
   generate_red: true
-
-  generate_nir: true
-
-  generate_ndvi: true
-
-  generate_gndvi: true
-
-  generate_savi: true
-
-  generate_msavi: true
-
-  generate_evi: true
-
-  noise_std: 0.01
-
+  generate_nir: true       # NIR en PNG (vista rápida)
+  generate_ndvi: true      # NDVI float32 GeoTIFF + PNG coloreado
+  # índices extra -> indices/<NOMBRE>/*.tif  (apagados: se pueden recalcular
+  # desde multispectral/*_MS.tif y cada uno ocupa ~4 MB por imagen de 1000x1000)
+  generate_gndvi: false
+  generate_ndre: false
+  generate_savi: false
+  generate_msavi: false
+  generate_evi: false
+  noise_std: 0.01          # ruido gaussiano del sensor (reflectancia)
   jpeg_quality: 95
 
+reflectance:
+  model: unmixing          # "legacy" reproduce la fórmula antigua NIR = 1.6G - 0.4R + 0.1
+  linearize: true          # quita la gamma sRGB de PNG/JPG (la reflectancia es lineal)
+  reflectance_scale: 0.6   # blanco de la cámara -> 60 % de reflectancia (evita saturar el NIR)
+  exg_low: 0.02            # ExG cromático por debajo -> 0 % vegetación
+  exg_high: 0.10           # ExG cromático por encima -> 100 % vegetación
+  dark_low: 0.04
+  dark_high: 0.12
+  chlorophyll_absorption: 0.60
+  k_veg: 2.0               # NIR / Verde sobre vegetación
+  k_soil: 1.25             # NIR / Rojo sobre suelo (línea de suelo)
+  rededge_veg: 0.30
+  rededge_bg: 0.50
+
+canopy:
+  ndvi_threshold: 0.45
+  min_fraction: 0.5
+  kernel_size: 5
+  min_area: 30             # píxeles
+
 vegetation:
-
   healthy: 0.70
-
   stressed: 0.15
-
   dry: 0.10
-
   dead: 0.05
 
 output:
-
-  export_format: jpg
-
+  export_format: png       # png | jpg para las vistas coloreadas
+  save_multispectral: true # GeoTIFF de 5 bandas uint16 (reflectancia x 10000)
   save_masks: true
+  save_yolo: false
+  save_reports: true       # manifest.csv con estadísticas por imagen
+  compress: zstd           # zstd: igual de rápido que none y ~20 % menos disco | deflate | none
 
-  save_yolo: true
-
-  save_reports: true
+pipeline:
+  input_dir: data/raw
+  output_dir: data/processed
+  recursive: false
+  limit: null
+  workers: 0               # 0 = todos los núcleos menos uno
+  overwrite: false         # false = salta imágenes cuyas salidas ya están al día
+  colormap: RdYlGn         # "jet" reproduce el aspecto anterior
+  ndvi_vmin: -0.2
+  ndvi_vmax: 1.0

@@ -1,13 +1,23 @@
 """
 DJI Mavic 3 Multispectral sensor definition.
 
-This module defines the DJI Mavic 3 Multispectral camera using the
-central wavelength of each spectral band.
+Band centres and widths follow DJI's published specification for the
+Mavic 3M multispectral camera:
+
+    Green     560 nm +/- 16 nm
+    Red       650 nm +/- 16 nm
+    Red Edge  730 nm +/- 16 nm
+    NIR       860 nm +/- 26 nm
+
+The Mavic 3M has NO multispectral blue band (it was removed with respect
+to the Phantom 4 Multispectral). A blue channel is still available from
+the drone's RGB camera, which is what AgriSpectralSynth uses for EVI.
+
+``bandwidth`` is stored as the full width (2 x the +/- value).
 
 Author
 ------
 Juan Carlos Vega
-OpenAI Collaboration
 
 License
 -------
@@ -20,26 +30,10 @@ from .sensor_base import SensorBase, SpectralBand
 
 
 class DJIMavic3M(SensorBase):
-    """
-    DJI Mavic 3 Multispectral sensor.
-
-    Specifications
-    --------------
-    Manufacturer:
-        DJI
-
-    Spectral Bands:
-        Blue      : 475 nm
-        Green     : 560 nm
-        Red       : 668 nm
-        Red Edge  : 717 nm
-        NIR       : 842 nm
-    """
+    """DJI Mavic 3 Multispectral (4 narrow bands)."""
 
     def __init__(self):
-
         super().__init__()
-
         self.create_bands()
 
     # ------------------------------------------------------------------
@@ -48,75 +42,36 @@ class DJIMavic3M(SensorBase):
 
     @property
     def name(self) -> str:
-
         return "DJI Mavic 3 Multispectral"
 
     @property
     def manufacturer(self) -> str:
-
         return "DJI"
 
     @property
     def spatial_resolution(self) -> float:
-        """
-        Default Ground Sampling Distance (meters/pixel).
-
-        Assuming a flight altitude of 120 m.
-        """
-
-        return 0.05
+        """Approximate multispectral GSD (m/pixel) at 120 m altitude."""
+        return 0.0567
 
     @property
     def spectral_range(self) -> tuple:
-
-        return (475.0, 842.0)
+        return (560.0, 860.0)
 
     # ------------------------------------------------------------------
-    # Band Definition
+    # Band definition
     # ------------------------------------------------------------------
 
     def create_bands(self) -> None:
-
         self._bands = {
-
-            "Blue": SpectralBand(
-                name="Blue",
-                center=475.0,
-                bandwidth=1.0,
-            ),
-
-            "Green": SpectralBand(
-                name="Green",
-                center=560.0,
-                bandwidth=1.0,
-            ),
-
-            "Red": SpectralBand(
-                name="Red",
-                center=668.0,
-                bandwidth=1.0,
-            ),
-
-            "RedEdge": SpectralBand(
-                name="RedEdge",
-                center=717.0,
-                bandwidth=1.0,
-            ),
-
-            "NIR": SpectralBand(
-                name="NIR",
-                center=842.0,
-                bandwidth=1.0,
-            ),
+            "Green": SpectralBand(name="Green", center=560.0, bandwidth=32.0),
+            "Red": SpectralBand(name="Red", center=650.0, bandwidth=32.0),
+            "RedEdge": SpectralBand(name="RedEdge", center=730.0, bandwidth=32.0),
+            "NIR": SpectralBand(name="NIR", center=860.0, bandwidth=52.0),
         }
 
     # ------------------------------------------------------------------
-    # Convenience Methods
+    # Convenience accessors
     # ------------------------------------------------------------------
-
-    @property
-    def blue(self) -> float:
-        return self.wavelength("Blue")
 
     @property
     def green(self) -> float:
@@ -139,9 +94,12 @@ class DJIMavic3M(SensorBase):
         return len(self._bands)
 
     def __repr__(self) -> str:
-
         return (
             f"{self.name}"
             f"(bands={self.band_count}, "
             f"range={self.spectral_range[0]}-{self.spectral_range[1]} nm)"
         )
+
+
+# Alias kept for readability / backwards compatibility with the tests.
+DJIMavic3Multispectral = DJIMavic3M

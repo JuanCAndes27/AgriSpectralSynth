@@ -1,49 +1,40 @@
-===============================
+# =============================================================
+# AgriSpectralSynth - dependencias
+#
+# Forma recomendada (instala el paquete en modo editable y
+# elimina la necesidad de hacer sys.path.insert en los scripts):
+#     pip install -e ".[dev]"
+#
+# Alternativa, sólo dependencias:
+#     pip install -r requirements.txt
+# =============================================================
 
-AgriSpectralSynth Requirements
+# Cálculo numérico
+numpy>=1.26
+scipy>=1.12
 
-===============================
-
-Numerical Computing
-
-numpy>=1.26 scipy>=1.12
-
-Computer Vision
-
+# Visión por computador / lectura-escritura de imágenes
 opencv-python>=4.10
-
-Geospatial
-
-rasterio>=1.4
-
-Image Processing
-
 Pillow>=10.0
 
-Plotting
+# Geoespacial
+rasterio>=1.4
 
+# Paletas de color (sólo para construir las LUT)
 matplotlib>=3.9
 
-Data Analysis
+# Configuración
+PyYAML>=6.0
+pydantic>=2.6
 
+# Utilidades
+tqdm>=4.66
 pandas>=2.2
 
-Progress Bars
+# Tests
+pytest>=8.0
 
-tqdm>=4.66
-
-Configuration
-
-PyYAML>=6.0
-
-Machine Learning
-
-scikit-learn>=1.5
-
-Optional Notebook Support
-
-jupyter>=1.1 notebook>=7.2 ipykernel>=6.29
-
-Utilities
-
-typing_extensions>=4.12
+# --- Opcionales ---
+# milliontrees          # descarga del dataset MillionTrees  ->  pip install -e ".[milliontrees]"
+# scikit-learn>=1.5     # módulos de ML futuros
+# jupyter>=1.1          # notebooks                          ->  pip install -e ".[notebook]"

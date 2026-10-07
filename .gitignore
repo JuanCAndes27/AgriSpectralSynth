@@ -1,86 +1,90 @@
-============================
+# ============================
+# AgriSpectralSynth .gitignore
+# ============================
 
-AgriSpectralSynth .gitignore
-
-============================
-
-Python
-
-pycache/ .py[cod] $py.class
-
-C extensions
-
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
 *.so
 
-Virtual environments
+# Entornos virtuales
+.venv/
+venv/
+env/
+ENV/
 
-.venv/ venv/ env/ ENV/
+# Distribución
+build/
+dist/
+*.egg-info/
+.eggs/
 
-Distribution
+# IDEs
+.vscode/
+.idea/
 
-build/ dist/ *.egg-info/ .eggs/
-
-IDEs
-
-.vscode/ .idea/
-
-Jupyter
-
+# Jupyter
 .ipynb_checkpoints/
 
-OS files
+# Sistema operativo
+.DS_Store
+Thumbs.db
+desktop.ini
 
-.DS_Store Thumbs.db desktop.ini
+# Logs
+*.log
+logs/
 
-Logs
+# Temporales
+*.tmp
+*.temp
+*.bak
+*.swp
 
-*.log logs/
+# Cachés
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.cache/
 
-Temporary files
+# Cobertura
+.coverage
+htmlcov/
 
-.tmp .temp .bak .swp
+# Datos: imágenes de entrada y salidas generadas (pesan GB, no van a git).
+# Las muestras para mostrar en GitHub van en assets/samples/
+data/
+output/
+outputs/
+results/
+runs/
+exports/
+datasets/milliontrees/
+datasets/generated/
+datasets/tmp/
 
-Python cache
+# Pesos de modelos
+*.pt
+*.pth
+*.onnx
+*.engine
 
-.pytest_cache/ .mypy_cache/ .cache/
-
-Coverage
-
-.coverage htmlcov/
-
-Generated outputs
-
-output/ outputs/ results/ runs/ exports/
-
-Synthetic datasets
-
-datasets/generated/ datasets/tmp/
-
-Model weights
-
-.pt .pth .onnx .engine
-
-TensorBoard
-
+# TensorBoard
 events.out.tfevents.*
 
-Raster auxiliary files
+# Auxiliares de raster
+*.aux.xml
+*.ovr
 
-.aux.xml .ovr
+# QGIS
+*.qgz~
+*.qgs~
 
-QGIS
+# Variables de entorno
+.env
+.env.*
 
-.qgz~ .qgs~
-
-Environment variables
-
-.env .env.*
-
-Local configuration
-
+# Configuración local
 config.local.py
-
-Keep project structure
-
-!assets/.gitkeep !notebooks/.gitkeep !spectral_library/.gitkeep
-!src/vegetation/.gitkeep
+configs/local*.yaml

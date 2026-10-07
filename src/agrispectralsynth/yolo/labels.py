@@ -38,13 +38,16 @@ class YOLOLabelGenerator:
     def __init__(
         self,
         class_id: int = 0,
-        min_points: int = 10,
+        min_points: int = 3,
         epsilon_factor: float = 0.003,
+        min_area: float = 30.0,
     ):
-
+        # YOLO only needs >= 3 vertices. The previous default (10) silently
+        # discarded small, round crowns after approxPolyDP simplification.
         self.class_id = class_id
         self.min_points = min_points
         self.epsilon_factor = epsilon_factor
+        self.min_area = min_area
 
     # ----------------------------------------------------------
 
@@ -100,6 +103,9 @@ class YOLOLabelGenerator:
         labels = []
 
         for contour in contours:
+
+            if cv2.contourArea(contour) < self.min_area:
+                continue
 
             polygon = self.contour_to_polygon(contour)
 
