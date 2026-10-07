@@ -1,0 +1,23 @@
+id: sentinel2a_msi
+name: Sentinel-2A MSI
+manufacturer: ESA / Copernicus
+platform: satellite
+srf_model: gaussian            # aproximación; ESA publica las curvas reales (ver README)
+gsd_m: 10                      # bandas 2, 3, 4, 8. Las de borde rojo y 8A son de 20 m
+bands:
+  - {name: B2,  center: 492.4, fwhm: 66,  gsd_m: 10}
+  - {name: B3,  center: 559.8, fwhm: 36,  gsd_m: 10}
+  - {name: B4,  center: 664.6, fwhm: 31,  gsd_m: 10}
+  - {name: B5,  center: 704.1, fwhm: 15,  gsd_m: 20}
+  - {name: B6,  center: 740.5, fwhm: 15,  gsd_m: 20}
+  - {name: B7,  center: 782.8, fwhm: 20,  gsd_m: 20}
+  - {name: B8,  center: 832.8, fwhm: 106, gsd_m: 10}
+  - {name: B8A, center: 864.7, fwhm: 21,  gsd_m: 20}
+roles: {blue: B2, green: B3, red: B4, red_edge: B5, nir: B8}
+sources:
+  - "Tabla de bandas Sentinel-2A/2B (centro y ancho de banda): https://en.wikipedia.org/wiki/Sentinel-2"
+  - "ESA, resolución espectral MSI: https://sentinel.esa.int/web/sentinel/user-guides/sentinel-2-msi/resolutions/spectral"
+notes: >
+  Se omiten B1 (aerosoles), B9 (vapor de agua), B10 (cirros) y B11-B12 (SWIR):
+  las primeras dependen de la atmósfera, que el motor no modela, y las SWIR
+  quedan fuera del rango 400-1000 nm de la librería espectral.

@@ -1,0 +1,16 @@
+id: dji_phantom4m
+name: DJI Phantom 4 Multispectral
+manufacturer: DJI
+platform: drone
+srf_model: gaussian
+reference_altitude_m: 120
+gsd_m: 0.0635                  # fabricante: GSD = H/18.9 cm/px -> 120/18.9 = 6.35 cm
+bands:
+  - {name: Blue,    center: 450, fwhm: 32}
+  - {name: Green,   center: 560, fwhm: 32}
+  - {name: Red,     center: 650, fwhm: 32}
+  - {name: RedEdge, center: 730, fwhm: 32}
+  - {name: NIR,     center: 840, fwhm: 52}
+roles: {blue: Blue, green: Green, red: Red, red_edge: RedEdge, nir: NIR}
+sources:
+  - "Ficha DJI P4 Multispectral (B 450±16, G 560±16, R 650±16, RE 730±16, NIR 840±26 nm; GSD H/18.9): https://dronespec.dronedesk.io/dji-p4-multispectral"

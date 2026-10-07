@@ -1,0 +1,17 @@
+# Cámara RGB genérica (sensor Bayer + filtro de corte IR).
+# Es la cámara que tomó la foto de entrada. El motor la usa para saber
+# qué parte del espectro "vio" cada canal R, G, B de la imagen original.
+# Valores típicos de cámaras de consumo; NO es la curva de un modelo concreto.
+id: rgb_camera
+name: Cámara RGB genérica (Bayer)
+platform: camera
+srf_model: gaussian
+ir_cut_nm: 680          # filtro de corte IR (atenuación sigmoide centrada aquí)
+bands:
+  - {name: Blue,  center: 465, fwhm: 90}
+  - {name: Green, center: 545, fwhm: 90}
+  - {name: Red,   center: 610, fwhm: 80}
+roles: {blue: Blue, green: Green, red: Red}
+notes: >
+  Supuesto del modelo. Si se conoce la cámara real (p. ej. la RGB de NEON o
+  de NAIP), se puede reemplazar por su curva medida en sensors/srf/.

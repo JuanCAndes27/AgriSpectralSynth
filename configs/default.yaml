@@ -23,7 +23,9 @@ simulation:
   jpeg_quality: 95
 
 reflectance:
-  model: unmixing          # "legacy" reproduce la fórmula antigua NIR = 1.6G - 0.4R + 0.1
+  # spectral: espectros de la librería + respuesta de cada sensor (cualquier sensor)
+  # unmixing: modelo empírico v0.2 (solo Mavic 3M) | legacy: fórmula v0.1 (solo Mavic 3M)
+  model: spectral
   linearize: true          # quita la gamma sRGB de PNG/JPG (la reflectancia es lineal)
   reflectance_scale: 0.6   # blanco de la cámara -> 60 % de reflectancia (evita saturar el NIR)
   exg_low: 0.02            # ExG cromático por debajo -> 0 % vegetación
@@ -35,6 +37,11 @@ reflectance:
   k_soil: 1.25             # NIR / Rojo sobre suelo (línea de suelo)
   rededge_veg: 0.30
   rededge_bg: 0.50
+
+spectral:                  # solo para model: spectral
+  vegetation: vegetation/healthy   # spectral_library/vegetation/*.csv (healthy, stressed, dry, dead)
+  soil: soil/soil_mixed            # spectral_library/soil/*.csv
+  rgb_camera: rgb_camera           # sensors/rgb_camera.yaml: cámara que tomó las fotos
 
 canopy:
   ndvi_threshold: 0.45
@@ -66,3 +73,7 @@ pipeline:
   colormap: RdYlGn         # "jet" reproduce el aspecto anterior
   ndvi_vmin: -0.2
   ndvi_vmax: 1.0
+  # ids de sensors/*.yaml, o "drones", "satellites", "all"
+  sensors: [dji_mavic3m]
+  simulate_gsd: false      # true: agrega píxeles a la resolución de cada sensor (10 m Sentinel, 30 m Landsat)
+  source_gsd_m: null       # GSD de las fotos de entrada (p. ej. 0.1 para NEON); en GeoTIFF se lee solo

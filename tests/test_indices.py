@@ -14,7 +14,8 @@ rng = np.random.default_rng(0)
 
 
 def bands(shape=(64, 64)):
-    return {k: rng.random(shape, dtype=np.float32) for k in ("Blue", "Green", "Red", "RedEdge", "NIR")}
+    """Random reflectance per band ROLE (the keys INDEX_REGISTRY uses)."""
+    return {k: rng.random(shape, dtype=np.float32) for k in ("blue", "green", "red", "red_edge", "nir")}
 
 
 def test_ndvi_known_values():
@@ -55,8 +56,8 @@ def test_gndvi_ndre_formulas():
 def test_savi_reduces_to_scaled_ndvi_when_L_zero():
     b = bands()
     np.testing.assert_allclose(
-        SAVI(L=0.0).compute(b["Red"], b["NIR"]),
-        NDVI(epsilon=0).compute(b["Red"], b["NIR"]),
+        SAVI(L=0.0).compute(b["red"], b["nir"]),
+        NDVI(epsilon=0).compute(b["red"], b["nir"]),
         atol=1e-4,
     )
 

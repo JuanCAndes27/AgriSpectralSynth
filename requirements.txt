@@ -35,6 +35,7 @@ pandas>=2.2
 pytest>=8.0
 
 # --- Opcionales ---
+# prosail               # solo para regenerar spectral_library/ ->  pip install -e ".[prosail]"
 # milliontrees          # descarga del dataset MillionTrees  ->  pip install -e ".[milliontrees]"
 # scikit-learn>=1.5     # módulos de ML futuros
 # jupyter>=1.1          # notebooks                          ->  pip install -e ".[notebook]"

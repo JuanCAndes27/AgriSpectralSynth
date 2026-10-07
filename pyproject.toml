@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "agrispectralsynth"
-version = "0.2.0"
-description = "Synthetic multispectral dataset generator for precision agriculture and tree canopy analysis."
+version = "0.3.0"
+description = "Synthetic multispectral dataset generator (drones and satellites) for precision agriculture and tree canopy analysis."
 readme = "README.md"
 license = { text = "MIT" }
 authors = [{ name = "Juan Carlos Vega" }]
@@ -26,6 +26,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["pytest>=8.0"]
 milliontrees = ["milliontrees"]
+prosail = ["prosail>=2.0"]       # only to regenerate spectral_library/ (GPLv3)
 notebook = ["jupyter>=1.1", "ipykernel>=6.29"]
 
 [project.scripts]

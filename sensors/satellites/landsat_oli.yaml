@@ -1,0 +1,17 @@
+id: landsat_oli
+name: Landsat 8/9 OLI
+manufacturer: NASA / USGS
+platform: satellite
+srf_model: gaussian            # aproximación a partir de los bordes de banda
+gsd_m: 30
+bands:
+  # centro = punto medio del intervalo, FWHM = ancho del intervalo
+  - {name: B2, center: 482.0, fwhm: 60}    # 452-512 nm
+  - {name: B3, center: 561.5, fwhm: 57}    # 533-590 nm
+  - {name: B4, center: 654.5, fwhm: 37}    # 636-673 nm
+  - {name: B5, center: 865.0, fwhm: 28}    # 851-879 nm
+roles: {blue: B2, green: B3, red: B4, nir: B5}
+sources:
+  - "Intervalos OLI (B2 0.452-0.512, B3 0.533-0.590, B4 0.636-0.673, B5 0.851-0.879 µm): https://docs.up42.com/data/landsat-8"
+  - "USGS, designación de bandas Landsat: https://www.usgs.gov/faqs/what-are-band-designations-landsat-satellites"
+notes: "Landsat 9 (OLI-2) tiene las mismas bandas que Landsat 8. OLI no tiene borde rojo: NDRE no se calcula."

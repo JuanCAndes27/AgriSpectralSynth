@@ -1,0 +1,19 @@
+id: dji_mavic3m
+name: DJI Mavic 3 Multispectral
+manufacturer: DJI
+platform: drone
+srf_model: gaussian            # el fabricante publica centro ± semiancho, no la curva
+reference_altitude_m: 120
+gsd_m: 0.055                   # derivado: 2·120·tan(61.2°/2) / 2592 px ≈ 5.5 cm
+bands:
+  # Azul tomado de la cámara RGB del dron (el Mavic 3M no tiene azul multiespectral)
+  - {name: Blue,    center: 465, fwhm: 90, auxiliary: true}
+  # Cámara multiespectral (4 bandas). "± 16 nm" del fabricante -> FWHM 32 nm
+  - {name: Green,   center: 560, fwhm: 32}
+  - {name: Red,     center: 650, fwhm: 32}
+  - {name: RedEdge, center: 730, fwhm: 32}
+  - {name: NIR,     center: 860, fwhm: 52}
+roles: {blue: Blue, green: Green, red: Red, red_edge: RedEdge, nir: NIR}
+sources:
+  - "Especificaciones DJI Mavic 3M (G 560±16, R 650±16, RE 730±16, NIR 860±26 nm; 1/2.8\" 5 MP; HFOV 61.2°): https://airborne.ed.ac.uk/airborne-research-and-innovation/unmanned-aircraft-systems-uas/unmanned-aircraft-systems-fleet/dji-mavic3-multispectral"
+  - "Comparación Mavic 3M vs P4M (sin banda azul MS): https://www.spheredrones.com.au/resources/blog/dji-mavic-3m-vs-phantom-4-multispectral"

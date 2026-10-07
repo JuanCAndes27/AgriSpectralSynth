@@ -43,6 +43,7 @@ def test_pipeline_outputs_and_manifest(raw_dir, tmp_path):
     assert summary["ok"] == 5 and summary["error"] == 0
 
     stem = "0_Test_Source_2024"
+    out = out / "dji_mavic3m"
     for rel in [
         f"ndvi_raw/{stem}_NDVI.tif",
         f"ndvi_visual/{stem}_NDVI.png",
@@ -56,18 +57,21 @@ def test_pipeline_outputs_and_manifest(raw_dir, tmp_path):
         assert src.count == 5 and src.dtypes[0] == "uint16"
         assert src.descriptions == ("Blue", "Green", "Red", "RedEdge", "NIR")
 
-    with open(out / "manifest.csv", encoding="utf-8") as f:
+    with open(out.parent / "manifest.csv", encoding="utf-8") as f:
         rows = list(csv.DictReader(f))
     assert len(rows) == 5
     assert rows[0]["dataset"] == "Test_Source_2024"
+    assert rows[0]["sensor"] == "dji_mavic3m"
     assert 0 < float(rows[0]["canopy_fraction"]) < 0.6
 
 
 def test_parallel_matches_sequential(raw_dir, tmp_path):
     run_pipeline(AppConfig(), input_dir=raw_dir, output_dir=tmp_path / "seq", workers=1, progress=False)
     run_pipeline(AppConfig(), input_dir=raw_dir, output_dir=tmp_path / "par", workers=2, progress=False)
-    for f in (tmp_path / "seq" / "ndvi_raw").glob("*.tif"):
-        with rasterio.open(f) as a, rasterio.open(tmp_path / "par" / "ndvi_raw" / f.name) as b:
+    files = sorted((tmp_path / "seq" / "dji_mavic3m" / "ndvi_raw").glob("*.tif"))
+    assert len(files) == 5
+    for f in files:
+        with rasterio.open(f) as a, rasterio.open(tmp_path / "par" / "dji_mavic3m" / "ndvi_raw" / f.name) as b:
             np.testing.assert_array_equal(a.read(1), b.read(1))
 
 
@@ -113,7 +117,7 @@ def test_georeferencing_is_preserved(tmp_path):
 
     out = tmp_path / "out"
     run_pipeline(AppConfig(), input_dir=raw, output_dir=out, workers=1, progress=False)
-    with rasterio.open(out / "ndvi_raw" / "geo_NDVI.tif") as src:
+    with rasterio.open(out / "dji_mavic3m" / "ndvi_raw" / "geo_NDVI.tif") as src:
         assert src.crs.to_epsg() == 32617
         assert src.transform == transform
 
@@ -133,7 +137,8 @@ def test_default_yaml_loads():
     from pathlib import Path
 
     cfg = load_config(Path(__file__).resolve().parents[1] / "configs" / "default.yaml")
-    assert cfg.reflectance.model == "unmixing"
+    assert cfg.reflectance.model == "spectral"
+    assert cfg.pipeline.sensors == ["dji_mavic3m"]
     assert cfg.enabled_indices() == []
     assert cfg.output.compress == "zstd"
 
@@ -144,8 +149,91 @@ def test_extra_indices_when_enabled(raw_dir, tmp_path):
     cfg.simulation.generate_evi = True
     out = tmp_path / "o"
     run_pipeline(cfg, input_dir=raw_dir, output_dir=out, workers=1, limit=1, progress=False)
-    assert (out / "indices" / "NDRE" / "0_Test_Source_2024_NDRE.tif").exists()
-    assert (out / "indices" / "EVI" / "0_Test_Source_2024_EVI.tif").exists()
+    assert (out / "dji_mavic3m" / "indices" / "NDRE" / "0_Test_Source_2024_NDRE.tif").exists()
+    assert (out / "dji_mavic3m" / "indices" / "EVI" / "0_Test_Source_2024_EVI.tif").exists()
+
+
+# ---------------------------------------------------------------------------
+# Multiple sensors
+# ---------------------------------------------------------------------------
+
+def test_all_sensors(raw_dir, tmp_path):
+    from agrispectralsynth.sensors import available_sensors, load_sensor
+
+    cfg = AppConfig()
+    cfg.pipeline.sensors = ["all"]
+    cfg.simulation.generate_ndre = True
+    out = tmp_path / "o"
+    s = run_pipeline(cfg, input_dir=raw_dir, output_dir=out, workers=1, limit=2, progress=False)
+    assert s["ok"] == 2 and s["error"] == 0
+    assert set(s["sensors"]) == set(available_sensors())
+
+    stem = "0_Test_Source_2024"
+    for sid in available_sensors():
+        sensor = load_sensor(sid)
+        with rasterio.open(out / sid / "multispectral" / f"{stem}_MS.tif") as src:
+            assert src.descriptions == tuple(sensor.band_names())
+        ndre = out / sid / "indices" / "NDRE" / f"{stem}_NDRE.tif"
+        assert ndre.exists() == ("red_edge" in sensor.roles)   # Landsat OLI has no red edge
+
+    with open(out / "manifest.csv", encoding="utf-8") as f:
+        rows = list(csv.DictReader(f))
+    assert len(rows) == 2 * len(available_sensors())
+
+
+def test_sensor_groups(raw_dir, tmp_path):
+    cfg = AppConfig()
+    cfg.pipeline.sensors = ["satellites"]
+    s = run_pipeline(cfg, input_dir=raw_dir, output_dir=tmp_path / "o", workers=1, limit=1, progress=False)
+    assert sorted(s["sensors"]) == ["landsat_oli", "sentinel2a_msi"]
+
+
+def test_unknown_sensor(raw_dir, tmp_path):
+    cfg = AppConfig()
+    cfg.pipeline.sensors = ["does_not_exist"]
+    with pytest.raises(KeyError):
+        run_pipeline(cfg, input_dir=raw_dir, output_dir=tmp_path / "o", workers=1, progress=False)
+
+
+def test_legacy_models_only_mavic(raw_dir, tmp_path):
+    cfg = AppConfig()
+    cfg.reflectance.model = "unmixing"
+    cfg.pipeline.sensors = ["sentinel2a_msi"]
+    with pytest.raises(ValueError):
+        run_pipeline(cfg, input_dir=raw_dir, output_dir=tmp_path / "o", workers=1, progress=False)
+    cfg.pipeline.sensors = ["dji_mavic3m"]
+    s = run_pipeline(cfg, input_dir=raw_dir, output_dir=tmp_path / "o", workers=1, limit=1, progress=False)
+    assert s["ok"] == 1
+
+
+def test_simulate_gsd_aggregates_pixels(tmp_path):
+    raw = tmp_path / "raw"
+    raw.mkdir()
+    big = np.tile(synthetic_scene(size=96), (5, 5, 1))          # 480 px at 0.1 m = 48 m
+    rgb = np.moveaxis(big[:, :, ::-1], -1, 0)
+    transform = from_origin(500000, 4100000, 0.1, 0.1)
+    with rasterio.open(raw / "geo.tif", "w", driver="GTiff", width=480, height=480, count=3,
+                       dtype="uint8", crs="EPSG:32617", transform=transform) as dst:
+        dst.write(rgb)
+
+    cfg = AppConfig()
+    cfg.pipeline.sensors = ["sentinel2a_msi", "dji_mavic3m"]
+    cfg.pipeline.simulate_gsd = True
+    out = tmp_path / "out"
+    s = run_pipeline(cfg, input_dir=raw, output_dir=out, workers=1, progress=False)
+    assert s["ok"] == 1, s["errors"]
+    with rasterio.open(out / "sentinel2a_msi" / "ndvi_raw" / "geo_NDVI.tif") as src:
+        assert (src.width, src.height) == (5, 5)                # 48 m / 10 m
+        assert src.transform.a == pytest.approx(9.6)
+    with rasterio.open(out / "dji_mavic3m" / "ndvi_raw" / "geo_NDVI.tif") as src:
+        assert src.width == 480                                 # 5.5 cm < 10 cm: unchanged
+
+
+def test_simulate_gsd_needs_source_gsd(raw_dir, tmp_path):
+    cfg = AppConfig()
+    cfg.pipeline.simulate_gsd = True
+    s = run_pipeline(cfg, input_dir=raw_dir, output_dir=tmp_path / "o", workers=1, limit=1, progress=False)
+    assert s["error"] == 1 and "source_gsd_m" in s["errors"][0][2]
 
 
 @pytest.mark.parametrize(

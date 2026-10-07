@@ -68,7 +68,9 @@ class SimulationConfig(BaseModel):
 # =============================================================================
 
 class ReflectanceConfig(BaseModel):
-    model: Literal["unmixing", "legacy"] = "unmixing"
+    # spectral: library spectra + sensor SRFs (any sensor)  | unmixing: v0.2 empirical (Mavic 3M only)
+    # legacy: v0.1 formula (Mavic 3M only)
+    model: Literal["spectral", "unmixing", "legacy"] = "spectral"
     linearize: bool = True
     reflectance_scale: float = 0.6
     exg_low: float = 0.02
@@ -80,6 +82,16 @@ class ReflectanceConfig(BaseModel):
     k_soil: float = 1.25
     rededge_veg: float = 0.30
     rededge_bg: float = 0.50
+
+
+# =============================================================================
+# SPECTRAL ENGINE (model: spectral)
+# =============================================================================
+
+class SpectralConfig(BaseModel):
+    vegetation: str = "vegetation/healthy"   # spectral_library/<category>/<name>.csv
+    soil: str = "soil/soil_mixed"
+    rgb_camera: str = "rgb_camera"           # sensors/rgb_camera.yaml: camera that took the photos
 
 
 # =============================================================================
@@ -131,6 +143,9 @@ class PipelineConfig(BaseModel):
     colormap: str = "RdYlGn"          # any matplotlib colormap ("jet" reproduces the old look)
     ndvi_vmin: float = -0.2
     ndvi_vmax: float = 1.0
+    sensors: List[str] = Field(default_factory=lambda: ["dji_mavic3m"])  # ids, "drones", "satellites" or "all"
+    simulate_gsd: bool = False        # aggregate pixels to each sensor's ground resolution
+    source_gsd_m: Optional[float] = None   # GSD of the input photos (needed for PNG/JPG)
 
 
 # =============================================================================
@@ -142,6 +157,7 @@ class AppConfig(BaseModel):
     sensor: SensorConfig = Field(default_factory=SensorConfig)
     simulation: SimulationConfig = Field(default_factory=SimulationConfig)
     reflectance: ReflectanceConfig = Field(default_factory=ReflectanceConfig)
+    spectral: SpectralConfig = Field(default_factory=SpectralConfig)
     canopy: CanopyConfig = Field(default_factory=CanopyConfig)
     vegetation: VegetationConfig = Field(default_factory=VegetationConfig)
     output: OutputConfig = Field(default_factory=OutputConfig)
