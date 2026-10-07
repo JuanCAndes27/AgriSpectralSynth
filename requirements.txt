@@ -16,6 +16,7 @@ scipy>=1.12
 # Visión por computador / lectura-escritura de imágenes
 opencv-python>=4.10
 Pillow>=10.0
+scikit-image>=0.22
 
 # Geoespacial
 rasterio>=1.4

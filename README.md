@@ -72,6 +72,24 @@ Cada píxel se modela como un **espectro continuo** (400–1000 nm), mezcla de v
 
 Los modelos anteriores siguen disponibles para comparar: `--model unmixing` (v0.2, empírico) y `--model legacy` (v0.1). Ambos simulan solo el Mavic 3M. Todos los parámetros están en `configs/default.yaml`.
 
+## Agente de delineación y conteo de copas (v0.4)
+
+Un **bandido contextual** elige, para cada escena, cuál de 32 métodos de delineación usar, y aprende de una recompensa calculada contra copas anotadas a mano. La recompensa es F1 con IoU ≥ 0.4 menos una penalización por error de conteo. La verdad de campo es el benchmark **NeonTreeEvaluation** (194 imágenes, 6,633 copas, 22 sitios NEON).
+
+- **En sitios conocidos** supera al mejor método fijo (recompensa 0.154 vs 0.116) y baja el error de inventario de +31 % a +1.3 %.
+- **En sitios nunca vistos** todavía no lo supera en recompensa, aunque sobrecuenta mucho menos.
+
+👉 Diseño de la recompensa, protocolo, resultados y limitaciones: [`docs/agente/README.md`](docs/agente/README.md)
+
+```bash
+python scripts/download_neontree_benchmark.py
+agrispectralsynth-agent rewards  --images data/benchmarks/NeonTreeEvaluation/evaluation/RGB \
+                                 --annotations data/benchmarks/NeonTreeEvaluation/annotations --out results/agent
+agrispectralsynth-agent evaluate --table results/agent --seeds 10
+agrispectralsynth-agent train    --table results/agent --out results/agent/agent.json
+agrispectralsynth-agent apply    --agent results/agent/agent.json --input data/raw --output results/conteo
+```
+
 ## Tests
 
 ```bash
@@ -89,11 +107,14 @@ src/agrispectralsynth/
 ├── indices/           NDVI, GNDVI, NDRE, SAVI, MSAVI, EVI
 ├── segmentation/      máscaras de vegetación y copas
 ├── sensors/           lectura de los YAML de sensores y respuestas espectrales (SRF)
+├── agent/             agente: verdad de campo, recompensa, acciones, contexto, bandidos, experimentos
 ├── datasets/          gestor de MillionTrees (descarga, polígonos, máscaras reales)
 └── yolo/              etiquetas YOLO-seg desde máscaras
 sensors/               definición de cada sensor (YAML) + documento explicativo  ← datos
 spectral_library/      espectros de los materiales (CSV)                       ← datos
-scripts/               generate_synthetic.py, build_spectral_library.py, make_sensor_figures.py, download_milliontrees.py
+docs/agente/           documento del agente, figuras y resultados
+scripts/               generate_synthetic.py, build_spectral_library.py, make_sensor_figures.py,
+                       download_neontree_benchmark.py, download_milliontrees.py
 configs/default.yaml
 assets/samples/        imágenes de muestra (incluye la comparación v0.1 vs v0.2)
 ```
