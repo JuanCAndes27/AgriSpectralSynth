@@ -1,6 +1,9 @@
 """
-Batch pipeline: RGB images -> synthetic multispectral bands, indices,
-canopy masks and a per-image statistics manifest.
+Batch pipeline: RGB images -> synthetic multispectral bands for one or
+more sensors, vegetation indices, canopy masks and a statistics manifest.
+
+Outputs go to ``<output_dir>/<sensor_id>/<product>/``; ``manifest.csv``
+has one row per (image, sensor).
 
 Why it is faster than the old ``tests/test_spectral_synthesis.py``
 -----------------------------------------------------------------
@@ -45,6 +48,8 @@ from .config import AppConfig
 from .constants import SUPPORTED_IMAGE_FORMATS
 from .indices import INDEX_REGISTRY, NDVI
 from .segmentation.canopy import canopy_mask
+from .sensors.registry import load_sensor, resolve_sensor_list
+from .sensors.sensor_base import Sensor
 from .spectral.reflectance import ReflectanceModel, ReflectanceParams
 from .utils.colormaps import colorize_bgr
 
@@ -52,11 +57,11 @@ logger = logging.getLogger("agrispectralsynth")
 
 GEOTIFF_SUFFIXES = (".tif", ".tiff")
 GENERATED_SUFFIXES = ("_NDVI", "_NIR", "_canopy", "_MS")
-MS_BAND_ORDER = ("Blue", "Green", "Red", "RedEdge", "NIR")
 REFLECTANCE_SCALE = 10000
+LEGACY_SENSOR = "dji_mavic3m"   # the only sensor the "unmixing"/"legacy" models simulate
 
 MANIFEST_FIELDS = [
-    "source", "stem", "dataset", "status", "error", "width", "height", "georeferenced",
+    "source", "stem", "dataset", "sensor", "status", "error", "width", "height", "gsd_m", "georeferenced",
     "veg_fraction_mean", "canopy_fraction",
     "ndvi_mean", "ndvi_std", "ndvi_p5", "ndvi_median", "ndvi_p95",
     "seconds",
@@ -89,6 +94,12 @@ class JobSettings:
     canopy_min_fraction: float = 0.5
     canopy_kernel: int = 5
     canopy_min_area: int = 30
+    sensors: List[str] = field(default_factory=lambda: [LEGACY_SENSOR])
+    vegetation: str = "vegetation/healthy"
+    soil: str = "soil/soil_mixed"
+    rgb_camera: str = "rgb_camera"
+    simulate_gsd: bool = False
+    source_gsd_m: Optional[float] = None
 
     @classmethod
     def from_config(cls, cfg: AppConfig, output_dir: Path, overwrite: Optional[bool] = None) -> "JobSettings":
@@ -114,12 +125,20 @@ class JobSettings:
             canopy_min_fraction=cfg.canopy.min_fraction,
             canopy_kernel=cfg.canopy.kernel_size,
             canopy_min_area=cfg.canopy.min_area,
+            sensors=resolve_sensor_list(cfg.pipeline.sensors),
+            vegetation=cfg.spectral.vegetation,
+            soil=cfg.spectral.soil,
+            rgb_camera=cfg.spectral.rgb_camera,
+            simulate_gsd=cfg.pipeline.simulate_gsd,
+            source_gsd_m=cfg.pipeline.source_gsd_m,
         )
 
     # -- output paths --------------------------------------------------------
 
-    def outputs_for(self, stem: str) -> Dict[str, Path]:
-        o = self.output_dir
+    def outputs_for(self, stem: str, sensor_id: str) -> Dict[str, Path]:
+        """Output files of one image for one sensor: <output_dir>/<sensor_id>/<product>/..."""
+        o = self.output_dir / sensor_id
+        sensor = load_sensor(sensor_id)
         paths: Dict[str, Path] = {}
         if self.save_multispectral:
             paths["multispectral"] = o / "multispectral" / f"{stem}_MS.tif"
@@ -133,11 +152,12 @@ class JobSettings:
         if self.save_yolo:
             paths["yolo"] = o / "yolo" / f"{stem}.txt"
         for name in self.extra_indices:
-            paths[name] = o / "indices" / name / f"{stem}_{name}.tif"
+            if all(r in sensor.roles for r in INDEX_REGISTRY[name][1]):
+                paths[name] = o / "indices" / name / f"{stem}_{name}.tif"
         return paths
 
     def output_dirs(self) -> List[Path]:
-        return sorted({p.parent for p in self.outputs_for("x").values()})
+        return sorted({p.parent for sid in self.sensors for p in self.outputs_for("x", sid).values()})
 
 
 # =============================================================================
@@ -277,87 +297,177 @@ def is_up_to_date(src: Path, outputs: Dict[str, Path]) -> bool:
 
 
 # =============================================================================
+# Spatial resolution (optional): emulate the sensor's ground sampling distance
+# =============================================================================
+
+def source_gsd(geo: Optional[dict], default: Optional[float]) -> Optional[float]:
+    """GSD of the input image in metres: from a projected GeoTIFF, else the configured value."""
+    if geo and geo.get("crs") is not None and getattr(geo["crs"], "is_projected", False):
+        return abs(float(geo["transform"].a))
+    return default
+
+
+def degrade_to_gsd(
+    bands: Dict[str, np.ndarray],
+    veg_fraction: np.ndarray,
+    sensor: Sensor,
+    src_gsd: float,
+    geo: Optional[dict],
+):
+    """
+    Area-average the bands to the sensor's GSD (pixel aggregation, the
+    mixed-pixel effect). Bands with a coarser native GSD (e.g. Sentinel-2
+    red-edge at 20 m) are aggregated to their own GSD and replicated on
+    the common grid, as in a resampled L2A product.
+    Returns (bands, veg_fraction, geo) unchanged if the sensor is finer.
+    """
+    target = sensor.gsd_m
+    if not target or target <= src_gsd * 1.01:
+        return bands, veg_fraction, geo
+    h, w = veg_fraction.shape
+    nw, nh = max(1, round(w * src_gsd / target)), max(1, round(h * src_gsd / target))
+    if nw < 2 or nh < 2:
+        raise ValueError(
+            f"image covers {w * src_gsd:.0f} x {h * src_gsd:.0f} m: too small for a {target:g} m sensor"
+        )
+
+    def area(a, size):
+        return cv2.resize(a, size, interpolation=cv2.INTER_AREA)
+
+    out = {}
+    for name, img in bands.items():
+        g = sensor.band(name).gsd_m
+        if g and g > target * 1.01:
+            cw, ch = max(1, round(w * src_gsd / g)), max(1, round(h * src_gsd / g))
+            out[name] = cv2.resize(area(img, (cw, ch)), (nw, nh), interpolation=cv2.INTER_NEAREST)
+        else:
+            out[name] = area(img, (nw, nh))
+    if geo:
+        t, sx, sy = geo["transform"], w / nw, h / nh
+        geo = {"transform": Affine(t.a * sx, t.b * sy, t.c, t.d * sx, t.e * sy, t.f), "crs": geo["crs"]}
+    return out, area(veg_fraction, (nw, nh)), geo
+
+
+# =============================================================================
 # Single image
 # =============================================================================
 
-def process_image(path: Path, job: JobSettings) -> dict:
-    """Process one RGB image. Never raises: errors are reported in the returned row."""
-    path = Path(path)
-    t0 = time.perf_counter()
-    row = {"source": str(path), "stem": path.stem, "dataset": guess_dataset(path.stem)}
-    outputs = job.outputs_for(path.stem)
+def _sensor_seed(job: JobSettings, image_name: str, sensor_id: str) -> int:
+    return job.seed + zlib.crc32(f"{image_name}|{sensor_id}".encode("utf-8"))
 
-    if not job.overwrite and is_up_to_date(path, outputs):
-        row["status"] = "skipped"
-        return row
 
-    try:
-        rgb, geo = read_rgb(path)
-        h, w = rgb.shape[:2]
+def _write_products(job, outputs, bands, ndvi, mask, sensor, geo):
+    if "multispectral" in outputs:
+        names = sensor.band_names()
+        stack = np.stack([bands[b] for b in names])
+        stack *= REFLECTANCE_SCALE
+        stack += 0.5
+        write_geotiff(outputs["multispectral"], stack.astype(np.uint16), geo, names, job.compress)
 
-        # Deterministic noise per image, independent of worker scheduling
-        rng = np.random.default_rng(job.seed + zlib.crc32(path.name.encode("utf-8")))
-        model = ReflectanceModel(params=job.params)
-        bands, veg_fraction = model.compute(rgb, rng=rng, return_fraction=True)
+    if "ndvi_raw" in outputs:
+        write_geotiff(outputs["ndvi_raw"], ndvi[None], geo, ["NDVI"], job.compress)
+        vis = colorize_bgr(ndvi, job.colormap, job.ndvi_vmin, job.ndvi_vmax)
+        write_image(outputs["ndvi_visual"], vis, job.jpeg_quality)
 
-        ndvi = NDVI().compute(bands["Red"], bands["NIR"])
-        mask = canopy_mask(
-            ndvi,
-            threshold=job.canopy_threshold,
-            veg_fraction=veg_fraction,
-            min_fraction=job.canopy_min_fraction,
-            kernel_size=job.canopy_kernel,
-            min_area=job.canopy_min_area,
-        )
+    if "nir" in outputs:
+        write_image(outputs["nir"], (bands[sensor.roles["nir"]] * 255.0 + 0.5).astype(np.uint8))
 
-        # ---- write products ------------------------------------------------
-        if "multispectral" in outputs:
-            stack = np.stack([bands[b] for b in MS_BAND_ORDER])
-            stack *= REFLECTANCE_SCALE
-            stack += 0.5
-            write_geotiff(outputs["multispectral"], stack.astype(np.uint16), geo, MS_BAND_ORDER, job.compress)
+    if "canopy_mask" in outputs:
+        write_image(outputs["canopy_mask"], mask * np.uint8(255))
 
-        if "ndvi_raw" in outputs:
-            write_geotiff(outputs["ndvi_raw"], ndvi[None], geo, ["NDVI"], job.compress)
-            vis = colorize_bgr(ndvi, job.colormap, job.ndvi_vmin, job.ndvi_vmax)
-            write_image(outputs["ndvi_visual"], vis, job.jpeg_quality)
+    if "yolo" in outputs:
+        from .yolo.labels import YOLOLabelGenerator
 
-        if "nir" in outputs:
-            write_image(outputs["nir"], (bands["NIR"] * 255.0 + 0.5).astype(np.uint8))
+        YOLOLabelGenerator(min_area=job.canopy_min_area).save(mask, outputs["yolo"])
 
-        if "canopy_mask" in outputs:
-            write_image(outputs["canopy_mask"], mask * np.uint8(255))
-
-        if "yolo" in outputs:
-            from .yolo.labels import YOLOLabelGenerator
-
-            YOLOLabelGenerator(min_area=job.canopy_min_area).save(mask, outputs["yolo"])
-
-        for name in job.extra_indices:
-            cls, needed = INDEX_REGISTRY[name]
-            values = cls().compute(*(bands[b] for b in needed))
+    for name in job.extra_indices:
+        if name in outputs:
+            cls, roles = INDEX_REGISTRY[name]
+            values = cls().compute(*(bands[sensor.roles[r]] for r in roles))
             write_geotiff(outputs[name], values[None], geo, [name], job.compress)
 
-        # ---- statistics for the manifest ------------------------------------
-        p5, p50, p95 = np.percentile(ndvi, [5, 50, 95])
-        row.update(
-            status="ok",
-            width=w,
-            height=h,
-            georeferenced=geo is not None,
-            veg_fraction_mean=round(float(veg_fraction.mean()), 4),
-            canopy_fraction=round(float(mask.mean()), 4),
-            ndvi_mean=round(float(ndvi.mean()), 4),
-            ndvi_std=round(float(ndvi.std()), 4),
-            ndvi_p5=round(float(p5), 4),
-            ndvi_median=round(float(p50), 4),
-            ndvi_p95=round(float(p95), 4),
-        )
-    except Exception as exc:  # keep the batch going, report at the end
-        row.update(status="error", error=f"{type(exc).__name__}: {exc}")
 
-    row["seconds"] = round(time.perf_counter() - t0, 3)
-    return row
+def process_image(path: Path, job: JobSettings) -> List[dict]:
+    """
+    Process one RGB image for every sensor in the job. Never raises:
+    errors are reported in the returned rows (one row per sensor).
+    """
+    path = Path(path)
+    base = {"source": str(path), "stem": path.stem, "dataset": guess_dataset(path.stem)}
+    outputs = {sid: job.outputs_for(path.stem, sid) for sid in job.sensors}
+    todo = [sid for sid in job.sensors if job.overwrite or not is_up_to_date(path, outputs[sid])]
+    rows = [{**base, "sensor": sid, "status": "skipped"} for sid in job.sensors if sid not in todo]
+    if not todo:
+        return rows
+
+    t0 = time.perf_counter()
+    try:
+        rgb, geo0 = read_rgb(path)
+        if job.params.model == "spectral":
+            from .spectral.engine import SpectralEngine
+
+            engine = SpectralEngine(job.vegetation, job.soil, job.rgb_camera, params=job.params)
+            scene = engine.prepare(rgb)
+            veg0 = scene.veg_fraction
+        else:
+            legacy_model = ReflectanceModel(params=job.params)
+            veg0 = None
+        src_gsd = source_gsd(geo0, job.source_gsd_m) if job.simulate_gsd else None
+        if job.simulate_gsd and src_gsd is None:
+            raise ValueError("simulate_gsd needs the input GSD: use a projected GeoTIFF or set pipeline.source_gsd_m")
+    except Exception as exc:
+        err = f"{type(exc).__name__}: {exc}"
+        return rows + [{**base, "sensor": sid, "status": "error", "error": err} for sid in todo]
+    t_shared = time.perf_counter() - t0
+
+    for sid in todo:
+        t1 = time.perf_counter()
+        row = {**base, "sensor": sid}
+        try:
+            sensor = load_sensor(sid)
+            rng = np.random.default_rng(_sensor_seed(job, path.name, sid))
+            if job.params.model == "spectral":
+                bands = engine.render(scene, sensor, rng=rng)
+                veg_fraction = veg0
+            else:
+                bands, veg_fraction = legacy_model.compute(rgb, rng=rng, return_fraction=True)
+
+            geo, gsd = geo0, src_gsd
+            if job.simulate_gsd:
+                bands, veg_fraction, geo = degrade_to_gsd(bands, veg_fraction, sensor, src_gsd, geo0)
+                gsd = max(src_gsd, sensor.gsd_m or src_gsd)
+
+            ndvi = NDVI().compute(bands[sensor.roles["red"]], bands[sensor.roles["nir"]])
+            mask = canopy_mask(
+                ndvi,
+                threshold=job.canopy_threshold,
+                veg_fraction=veg_fraction,
+                min_fraction=job.canopy_min_fraction,
+                kernel_size=job.canopy_kernel if not job.simulate_gsd else 1,
+                min_area=job.canopy_min_area if not job.simulate_gsd else 1,
+            )
+            _write_products(job, outputs[sid], bands, ndvi, mask, sensor, geo)
+
+            p5, p50, p95 = np.percentile(ndvi, [5, 50, 95])
+            row.update(
+                status="ok",
+                width=ndvi.shape[1],
+                height=ndvi.shape[0],
+                gsd_m=round(gsd, 4) if gsd else "",
+                georeferenced=geo is not None,
+                veg_fraction_mean=round(float(veg_fraction.mean()), 4),
+                canopy_fraction=round(float(mask.mean()), 4),
+                ndvi_mean=round(float(ndvi.mean()), 4),
+                ndvi_std=round(float(ndvi.std()), 4),
+                ndvi_p5=round(float(p5), 4),
+                ndvi_median=round(float(p50), 4),
+                ndvi_p95=round(float(p95), 4),
+            )
+        except Exception as exc:  # keep the batch going, report at the end
+            row.update(status="error", error=f"{type(exc).__name__}: {exc}")
+        row["seconds"] = round(time.perf_counter() - t1 + t_shared / len(todo), 3)
+        rows.append(row)
+    return rows
 
 
 # =============================================================================
@@ -376,15 +486,16 @@ def _process_star(args):
 
 def write_manifest(path: Path, rows: List[dict]) -> None:
     """Merge with an existing manifest so skipped images keep their statistics."""
-    merged: Dict[str, dict] = {}
+    merged: Dict[tuple, dict] = {}
     if path.exists():
         with open(path, newline="", encoding="utf-8") as f:
             for r in csv.DictReader(f):
-                merged[r["source"]] = r
+                merged[(r["source"], r.get("sensor", LEGACY_SENSOR))] = r
     for r in rows:
-        if r.get("status") == "skipped" and r["source"] in merged:
+        key = (r["source"], r["sensor"])
+        if r.get("status") == "skipped" and key in merged:
             continue
-        merged[r["source"]] = r
+        merged[key] = r
     with open(path, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=MANIFEST_FIELDS, extrasaction="ignore")
         writer.writeheader()
@@ -414,6 +525,11 @@ def run_pipeline(
         workers = max(1, (os.cpu_count() or 2) - 1)
 
     job = JobSettings.from_config(cfg, output_dir, overwrite)
+    if job.params.model != "spectral" and job.sensors != [LEGACY_SENSOR]:
+        raise ValueError(
+            f"reflectance.model='{job.params.model}' only simulates {LEGACY_SENSOR}; "
+            "use model 'spectral' for other sensors"
+        )
     for d in job.output_dirs():
         d.mkdir(parents=True, exist_ok=True)
 
@@ -427,6 +543,7 @@ def run_pipeline(
 
     logger.info("Input : %s (%d images)", input_dir.resolve(), len(images))
     logger.info("Output: %s", output_dir.resolve())
+    logger.info("Sensors: %s", ", ".join(job.sensors))
     logger.info("Workers: %d | model: %s | overwrite: %s", workers, job.params.model, job.overwrite)
 
     t0 = time.perf_counter()
@@ -452,23 +569,30 @@ def run_pipeline(
                 results = tqdm(results, total=len(tasks), unit="img", desc="AgriSpectralSynth")
             except ImportError:
                 pass
-        rows = list(results)
+        per_image = list(results)
     finally:
         if workers != 1:
             pool.shutdown()
 
     elapsed = time.perf_counter() - t0
-    counts = {s: sum(r.get("status") == s for r in rows) for s in ("ok", "skipped", "error")}
+    rows = [r for img_rows in per_image for r in img_rows]
+
+    def image_status(img_rows):
+        st = {r["status"] for r in img_rows}
+        return "error" if "error" in st else ("ok" if "ok" in st else "skipped")
+
+    counts = {s: sum(image_status(r) == s for r in per_image) for s in ("ok", "skipped", "error")}
 
     if cfg.output.save_reports:
         write_manifest(output_dir / "manifest.csv", rows)
 
-    errors = [(r["source"], r.get("error", "")) for r in rows if r.get("status") == "error"]
-    for src, err in errors[:20]:
-        logger.error("%s -> %s", Path(src).name, err)
+    errors = [(r["source"], r["sensor"], r.get("error", "")) for r in rows if r.get("status") == "error"]
+    for src, sid, err in errors[:20]:
+        logger.error("%s [%s] -> %s", Path(src).name, sid, err)
 
     return {
         "images": len(images),
+        "sensors": job.sensors,
         **counts,
         "errors": errors,
         "seconds": round(elapsed, 2),

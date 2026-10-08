@@ -31,7 +31,12 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("-n", "--limit", type=int, default=None, help="Process only the first N images")
     p.add_argument("--overwrite", action="store_true", help="Regenerate even if outputs are up to date")
     p.add_argument("--recursive", action="store_true", help="Search sub-folders too")
-    p.add_argument("--model", choices=["unmixing", "legacy"], default=None, help="Reflectance model")
+    p.add_argument("-s", "--sensors", default=None,
+                   help="Sensor ids separated by commas, or 'drones', 'satellites', 'all' (default: config)")
+    p.add_argument("--list-sensors", action="store_true", help="Show available sensors and exit")
+    p.add_argument("--simulate-gsd", action="store_true", help="Aggregate pixels to each sensor's ground resolution")
+    p.add_argument("--source-gsd", type=float, default=None, help="GSD of the input photos in metres (PNG/JPG)")
+    p.add_argument("--model", choices=["spectral", "unmixing", "legacy"], default=None, help="Reflectance model")
     p.add_argument("--cmap", default=None, help="Colormap for NDVI previews (RdYlGn, jet, viridis...)")
     p.add_argument("--all-indices", action="store_true", help="Also write GNDVI, NDRE, SAVI, MSAVI and EVI GeoTIFFs")
     p.add_argument("-q", "--quiet", action="store_true")
@@ -46,7 +51,22 @@ def main(argv=None) -> int:
         datefmt="%H:%M:%S",
     )
 
+    if args.list_sensors:
+        from .sensors import available_sensors, load_sensor
+
+        for sid in available_sensors():
+            s = load_sensor(sid)
+            bands = ", ".join(f"{b.name} {b.center:g}/{b.fwhm:g}" for b in s.band_list)
+            print(f"{sid:22s} {s.platform:9s} {str(s.gsd_m or ''):>6s} m   {bands}")
+        return 0
+
     cfg = load_config(args.config)
+    if args.sensors:
+        cfg.pipeline.sensors = [x.strip() for x in args.sensors.split(",")]
+    if args.simulate_gsd:
+        cfg.pipeline.simulate_gsd = True
+    if args.source_gsd:
+        cfg.pipeline.source_gsd_m = args.source_gsd
     if args.recursive:
         cfg.pipeline.recursive = True
     if args.model:
@@ -67,11 +87,12 @@ def main(argv=None) -> int:
             overwrite=True if args.overwrite else None,
             progress=not args.quiet,
         )
-    except FileNotFoundError as e:
+    except (FileNotFoundError, KeyError, ValueError) as e:
         logging.error(str(e))
         return 1
 
     print(
+        f"\nSensors: {', '.join(summary['sensors'])}"
         f"\nDone: {summary['ok']} processed, {summary['skipped']} up to date (skipped), "
         f"{summary['error']} errors in {summary['seconds']} s "
         f"({summary['ms_per_image']} ms/img)\nOutputs: {summary['output_dir']}"

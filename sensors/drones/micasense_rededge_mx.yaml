@@ -1,0 +1,19 @@
+id: micasense_rededge_mx
+name: MicaSense RedEdge-MX
+manufacturer: MicaSense
+platform: drone
+srf_model: gaussian
+reference_altitude_m: 120
+gsd_m: 0.08                    # fabricante: 8 cm/px por banda a 120 m
+bands:
+  # Unidades RX02 o superior (MicaSense publica centro y ancho de banda FWHM)
+  - {name: Blue,    center: 475, fwhm: 32}
+  - {name: Green,   center: 560, fwhm: 27}
+  - {name: Red,     center: 668, fwhm: 14}
+  - {name: RedEdge, center: 717, fwhm: 12}
+  - {name: NIR,     center: 842, fwhm: 57}
+roles: {blue: Blue, green: Green, red: Red, red_edge: RedEdge, nir: NIR}
+sources:
+  - "MicaSense, centros y anchos de banda RedEdge-MX: https://support.micasense.com/hc/en-us/articles/214878778"
+  - "GSD 8 cm/px a 120 m, HFOV 47.2°: https://volatusdrones.ca/products/micasense-rededge-mx"
+notes: "Unidades RX01 o anteriores tienen bandas más angostas (B20, G20, R10, RE10, NIR 840/40)."

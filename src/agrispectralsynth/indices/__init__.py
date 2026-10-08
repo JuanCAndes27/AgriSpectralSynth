@@ -6,14 +6,15 @@ from .ndre import NDRE
 from .ndvi import NDVI
 from .savi import SAVI
 
-# name -> (class, bands it needs, in the order compute() expects them)
+# name -> (class, band ROLES it needs, in the order compute() expects them).
+# Each sensor YAML maps roles to its own band names (e.g. Sentinel-2: red -> B4).
 INDEX_REGISTRY = {
-    "NDVI": (NDVI, ("Red", "NIR")),
-    "GNDVI": (GNDVI, ("Green", "NIR")),
-    "NDRE": (NDRE, ("RedEdge", "NIR")),
-    "SAVI": (SAVI, ("Red", "NIR")),
-    "MSAVI": (MSAVI, ("Red", "NIR")),
-    "EVI": (EVI, ("Blue", "Red", "NIR")),
+    "NDVI": (NDVI, ("red", "nir")),
+    "GNDVI": (GNDVI, ("green", "nir")),
+    "NDRE": (NDRE, ("red_edge", "nir")),
+    "SAVI": (SAVI, ("red", "nir")),
+    "MSAVI": (MSAVI, ("red", "nir")),
+    "EVI": (EVI, ("blue", "red", "nir")),
 }
 
 __all__ = ["VegetationIndex", "NDVI", "GNDVI", "NDRE", "SAVI", "MSAVI", "EVI", "INDEX_REGISTRY"]

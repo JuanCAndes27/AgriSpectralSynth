@@ -1,0 +1,20 @@
+id: parrot_sequoia_plus
+name: Parrot Sequoia+
+manufacturer: Parrot / senseFly
+platform: drone
+srf_model: gaussian
+reference_altitude_m: 120
+gsd_m: 0.11                    # aproximado: 1280 px por banda; no verificado con ficha oficial
+bands:
+  - {name: Blue,    center: 465, fwhm: 90, auxiliary: true}   # de la cámara RGB 16 MP
+  - {name: Green,   center: 550, fwhm: 40}
+  - {name: Red,     center: 660, fwhm: 40}
+  - {name: RedEdge, center: 735, fwhm: 10}
+  - {name: NIR,     center: 790, fwhm: 40}
+roles: {blue: Blue, green: Green, red: Red, red_edge: RedEdge, nir: NIR}
+sources:
+  - "Bandas Sequoia (550/40, 660/40, 735/10, 790/40 nm; 1280×960 px): https://informatica.vu.lt/journal/INFORMATICA/article/1274/read"
+  - "Ficha Sequoia+ (4 bandas + RGB 16 MP): https://www.adorama.com/sf050007.html"
+notes: >
+  Algunas fichas comerciales escriben "550 ± 40 nm"; aquí se interpreta 40 nm
+  como ancho total de banda (FWHM), que es como lo describe la literatura.

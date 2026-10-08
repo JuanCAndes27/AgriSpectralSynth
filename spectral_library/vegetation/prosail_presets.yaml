@@ -1,0 +1,72 @@
+# Parámetros PROSAIL (PROSPECT-D + 4SAIL) de los miembros extremos de vegetación.
+# scripts/build_spectral_library.py los usa para generar los .csv de esta carpeta.
+#
+#   N       parámetro de estructura de la hoja (adimensional)
+#   cab     clorofila a+b (µg/cm²)
+#   car     carotenoides (µg/cm²)
+#   ant     antocianinas (µg/cm²)
+#   cbrown  pigmentos marrones / senescencia (fracción)
+#   cw      espesor equivalente de agua (cm)
+#   cm      materia seca (g/cm²)
+#   lai     índice de área foliar (m²/m²)
+#   ala     ángulo foliar medio (°), 57 ≈ distribución esférica
+#   hspot   parámetro hot-spot
+#
+# Geometría común: sol a 30° del cenit, sensor en nadir.
+# Fondo: suelo "soil_mixed" (mezcla 70 % seco / 30 % húmedo).
+#
+# Los rangos son plausibles para copas arbóreas; NO están calibrados con
+# mediciones de campo. Ajustarlos es parte de la validación pendiente.
+
+geometry: {tts: 30.0, tto: 0.0, psi: 0.0}
+soil: {rsoil: 1.0, psoil: 0.7}
+
+presets:
+  healthy:
+    description: Copa sana, densa, con buena clorofila y agua
+    N: 1.5
+    cab: 45.0
+    car: 10.0
+    ant: 0.0
+    cbrown: 0.0
+    cw: 0.012
+    cm: 0.009
+    lai: 3.5
+    ala: 57.0
+    hspot: 0.01
+  stressed:
+    description: Estrés hídrico o nutricional, menos clorofila y follaje
+    N: 1.6
+    cab: 25.0
+    car: 8.0
+    ant: 1.0
+    cbrown: 0.1
+    cw: 0.008
+    cm: 0.010
+    lai: 2.2
+    ala: 57.0
+    hspot: 0.01
+  dry:
+    description: Follaje seco o senescente, clorofila muy baja
+    N: 1.8
+    cab: 8.0
+    car: 5.0
+    ant: 2.0
+    cbrown: 0.6
+    cw: 0.003
+    cm: 0.012
+    lai: 1.2
+    ala: 57.0
+    hspot: 0.01
+  dead:
+    description: Árbol muerto, ramas y hojas secas, mucho suelo visible
+    N: 2.0
+    cab: 1.0
+    car: 1.0
+    ant: 0.0
+    cbrown: 1.0
+    cw: 0.001
+    cm: 0.015
+    lai: 0.5
+    ala: 57.0
+    hspot: 0.01

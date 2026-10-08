@@ -28,7 +28,7 @@ PROJECT_DESCRIPTION: str = (
     "Synthetic Multispectral Dataset Generator for Precision Agriculture"
 )
 
-VERSION: str = "0.1.0"
+VERSION: str = "0.4.0"
 
 LICENSE: str = "MIT"
 

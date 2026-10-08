@@ -60,7 +60,7 @@ from ..sensors.sensor_base import SensorBase
 class ReflectanceParams:
     """Tunable parameters of the empirical model (all exposed in YAML)."""
 
-    model: str = "unmixing"        # "unmixing" | "legacy"
+    model: str = "unmixing"        # "spectral" (engine.py) | "unmixing" | "legacy"
     linearize: bool = True         # undo the sRGB gamma of PNG/JPG before building bands
     reflectance_scale: float = 0.6 # linear camera white (1.0) -> 60 % reflectance (avoids NIR saturation)
 
