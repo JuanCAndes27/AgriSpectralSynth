@@ -8,7 +8,7 @@ Resultados de la versión 0.5 del agente sobre **NeonTreeEvaluation** (Weinstein
    - filtrar las detecciones de DeepForest por NDVI real o sintético;
    - **validar el NDVI sintético** píxel a píxel.
 
-Datos: 189 parcelas de 22 sitios NEON con anotación de copas e hiperespectral, × 4 drones = 756 contextos. Se tomaron 190 parcelas con hiperespectral; la `ONAQ_021_2019` se excluye porque su cubo trae 425 bandas en lugar de 426. Son 58 acciones y 43 848 evaluaciones en total. La tabla de recompensas tarda 12 min en una CPU de 2 núcleos.
+Datos: 189 parcelas de 20 sitios NEON con anotación de copas e hiperespectral (6 262 árboles; UNDE y ONAQ quedan fuera), × 4 drones = 756 contextos. Se tomaron 190 parcelas con hiperespectral; la `ONAQ_021_2019` se excluye porque su cubo trae 425 bandas en lugar de 426. Son 58 acciones y 43 848 evaluaciones en total. La tabla de recompensas tarda 12 min en una CPU de 2 núcleos.
 
 ## Acciones nuevas
 
