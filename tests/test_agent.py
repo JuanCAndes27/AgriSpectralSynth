@@ -268,3 +268,39 @@ def test_cli_train_and_apply(tiny_benchmark, tmp_path):
         rows = list(csv.DictReader(f))
     assert len(rows) == 6 and all(int(r["trees"]) > 0 for r in rows)
     assert (res / "boxes" / "AAAA_000_2020.csv").exists()
+
+
+
+def test_cli_evaluate_writes_tables_and_figures(tiny_benchmark, tmp_path):
+    from agrispectralsynth.agent.cli import main
+
+    img_dir, ann_dir, out = tiny_benchmark
+    main(["rewards", "--images", str(img_dir), "--annotations", str(ann_dir), "--out", str(out),
+          "--sensors", "dji_mavic3m,parrot_sequoia_plus", "--workers", "1"])
+    res = tmp_path / "res"
+    assert main(["evaluate", "--table", str(out), "--out", str(res), "--seeds", "1", "--folds", "3", "--epochs", "1",
+                 "--images", str(img_dir), "--annotations", str(ann_dir)]) == 0
+    for f in ("summary.csv", "choices_by_site.csv", "fig_policies.png", "fig_regret.png", "fig_sites.png",
+              "fig_examples.png"):
+        assert (res / f).exists(), f
+    with open(res / "summary.csv", encoding="utf-8") as fh:
+        rows = list(csv.DictReader(fh))
+    assert {r["protocol"] for r in rows} == {"image", "site"}
+
+
+def test_recompute_contexts_keeps_rewards(tiny_benchmark):
+    from agrispectralsynth.agent.rewards import recompute_contexts
+
+    img_dir, ann_dir, out = tiny_benchmark
+    build_reward_table(img_dir, ann_dir, out, RewardJob(sensors=["dji_mavic3m"]), workers=1, progress=False)
+    before = (out / "rewards.csv").read_text()
+    assert recompute_contexts(img_dir, ann_dir, out, RewardJob(sensors=["dji_mavic3m"]), workers=1) == 6
+    assert (out / "rewards.csv").read_text() == before
+    assert load_reward_table(out).X.shape == (6, len(FEATURE_NAMES))
+
+
+def test_missing_images_are_reported(tmp_path):
+    (tmp_path / "ann").mkdir(); (tmp_path / "img").mkdir()
+    write_voc(tmp_path / "ann" / "X_001.xml", "X_001.tif", [[0, 0, 5, 5]], 10, 10)
+    with pytest.raises(FileNotFoundError):
+        build_reward_table(tmp_path / "img", tmp_path / "ann", tmp_path / "out", workers=1, progress=False)

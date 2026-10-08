@@ -167,13 +167,22 @@ def fig_examples(T: RewardTable, results: List[FoldResult], images_dir: Path, an
         if r.policy == policy and r.seed == seed0:
             for i, a in zip(r.test_idx, r.choices):
                 choice[i] = a
+    present = [s for s in sites if np.any(T.sites == s)]
+    if not present:
+        # Other datasets (e.g. MillionTrees) have other sites: use the most frequent ones
+        uniq, counts = np.unique(T.sites, return_counts=True)
+        present = list(uniq[np.argsort(-counts)][: len(sites)])
+    if sensor not in set(T.sensors):
+        sensor = str(T.sensors[0])
     picks = []
-    for site in sites:
+    for site in present:
         idx = [i for i in choice if T.sites[i] == site and T.sensors[i] == sensor]
         if idx:
             # the image closest to the site's median agent reward: typical, not cherry-picked
             vals = np.array([T.R[i, choice[i]] for i in idx])
             picks.append(idx[int(np.argmin(np.abs(vals - np.median(vals))))])
+    if not picks:
+        return
     eng, sen = SpectralEngine(), load_sensor(sensor)
     fig, axes = plt.subplots(1, len(picks), figsize=(3.4 * len(picks), 3.9))
     for ax, i in zip(np.atleast_1d(axes), picks):
