@@ -7,7 +7,7 @@ from __future__ import annotations
 import csv
 from collections import Counter, defaultdict
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import numpy as np
 
@@ -147,15 +147,19 @@ def choices_by_site(T: RewardTable, results: List[FoldResult], policy: str = "Li
 
 def fig_examples(T: RewardTable, results: List[FoldResult], images_dir: Path, annotations_dir: Path, path: Path,
                  sites=("SJER", "TEAK", "NIWO", "OSBS"), policy: str = "LinUCB", sensor: str = "dji_mavic3m",
-                 gsd_m: float = 0.1) -> None:
-    """Test-fold examples: annotated crowns (yellow) vs crowns of the method the agent chose (magenta)."""
+                 gsd_m: float = 0.1, hsi_dir: Optional[Path] = None, bands_csv: Optional[Path] = None,
+                 deepforest_weights: Optional[str] = None) -> None:
+    """
+    Test-fold examples: annotated crowns (yellow) vs crowns of the method the agent chose (magenta).
+    hsi_dir / bands_csv / deepforest_weights are needed when the agent can choose those actions.
+    """
     import cv2
 
     from ..indices import NDVI
     from ..pipeline import read_rgb
     from ..sensors.registry import load_sensor
     from ..spectral.engine import SpectralEngine
-    from .actions import ARM_INDEX, ARMS, make_signals, run_arm
+    from .actions import ARM_INDEX, ARMS, detect, make_signals, run_arm
     from .evaluation import score_detections
     from .groundtruth import load_annotations
 
@@ -193,7 +197,14 @@ def fig_examples(T: RewardTable, results: List[FoldResult], images_dir: Path, an
         b = eng.render(sc, sen, noise_std=0)
         sig = make_signals(rgb, NDVI().compute(b[sen.roles["red"]], b[sen.roles["nir"]]), b[sen.roles["nir"]])
         arm = T.arms[choice[i]]
-        pred = run_arm(ARMS[ARM_INDEX[arm]], sig, gsd_m)
+        spec = ARMS[ARM_INDEX[arm]]
+        if spec.needs_hsi:
+            from .hyperspectral import attach_real_ndvi, hsi_path
+
+            attach_real_ndvi(sig, hsi_path(Path(hsi_dir), stem), bands_csv, sen, rgb.shape[:2])
+        if spec.is_detector:
+            detect(sig, deepforest_weights)
+        pred = run_arm(spec, sig, gsd_m)
         sc_ = score_detections(pred, gts[stem].boxes)
         im = rgb.copy()
         for x0, y0, x1, y1 in gts[stem].boxes.astype(int):

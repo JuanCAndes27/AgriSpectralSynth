@@ -25,6 +25,18 @@ exg   chromatic excess-green of the RGB photo and its luminance:
       the RGB-only baseline, identical for every sensor
 dark  crowns as objects darker than the background (luminance), the
       classic cue in open woodland where trees are darker than dry soil
+hsi   REAL NDVI from the NEON hyperspectral cube (1 m, integrated with the
+      sensor's bands and resampled to the RGB grid); only when available
+
+Detector
+--------
+df    DeepForest (RetinaNet trained on NEON RGB, see deepforest.py). One
+      inference per image; the arms differ in the minimum detection score
+      kept (0.1 ... 0.4). ~100x slower than the classical arms on a CPU,
+      which is what makes the time term of the reward meaningful.
+      df_rgb_*  : detections as they come
+      df_ndvi_* : detections whose median SYNTHETIC NDVI is >= 0.3
+      df_hsi_*  : detections whose median REAL (hyperspectral) NDVI is >= 0.3
 
 Thresholds
 ----------
@@ -44,21 +56,34 @@ from scipy import ndimage as ndi
 from skimage.feature import peak_local_max
 from skimage.segmentation import watershed
 
-THRESHOLDS = {"ndvi": 0.45, "exg": 0.06}
+THRESHOLDS = {"ndvi": 0.45, "exg": 0.06, "hsi": 0.45}
+DF_NDVI_FILTER = 0.3      # a priori vegetation threshold for filtering detections
 CROWN_SIZES_M = (2.0, 4.0, 7.0)
+
+
+DF_SCORES = (0.1, 0.2, 0.3, 0.4)
 
 
 @dataclass(frozen=True)
 class Arm:
     name: str
-    algorithm: str            # cc | wsd | lmw
-    signal: str               # ndvi | exg | dark
-    crown_m: Optional[float]  # expected crown diameter (m); None for cc
+    algorithm: str            # cc | wsd | lmw | df
+    signal: str               # ndvi | exg | dark | rgb (df)
+    crown_m: Optional[float]  # expected crown diameter (m); None for cc / df
     threshold: str = "fixed"  # fixed | otsu
+    score: Optional[float] = None   # df: minimum detection score
 
     @property
     def sensor_dependent(self) -> bool:
-        return self.signal == "ndvi"
+        return self.signal in ("ndvi", "hsi")
+
+    @property
+    def needs_hsi(self) -> bool:
+        return self.signal == "hsi"
+
+    @property
+    def is_detector(self) -> bool:
+        return self.algorithm == "df"
 
 
 def default_arms() -> List[Arm]:
@@ -77,7 +102,63 @@ def default_arms() -> List[Arm]:
     return arms
 
 
-ARMS: List[Arm] = default_arms()
+def deepforest_arms(filter_signal: str = "rgb") -> List[Arm]:
+    return [Arm(f"df_{filter_signal}_s{s:g}", "df", filter_signal, None, "fixed", s) for s in DF_SCORES]
+
+
+def hsi_arms() -> List[Arm]:
+    """Same classical algorithms on the real (hyperspectral) NDVI."""
+    arms = []
+    for thr in ("fixed", "otsu"):
+        tag = "hsi" if thr == "fixed" else "hsi-otsu"
+        arms.append(Arm(f"cc_{tag}", "cc", "hsi", None, thr))
+        for algo in ("wsd", "lmw"):
+            for d in CROWN_SIZES_M:
+                arms.append(Arm(f"{algo}_{tag}_{d:g}m", algo, "hsi", d, thr))
+    return arms
+
+
+CLASSICAL_ARMS: List[Arm] = default_arms()
+DF_ARMS: List[Arm] = deepforest_arms("rgb") + deepforest_arms("ndvi")
+HSI_ARMS: List[Arm] = hsi_arms()
+DFH_ARMS: List[Arm] = deepforest_arms("hsi")
+ARMS: List[Arm] = CLASSICAL_ARMS + DF_ARMS + HSI_ARMS + DFH_ARMS
+
+
+def arms_for(deepforest: bool = False, hsi: bool = False) -> List[Arm]:
+    """The arms of an experiment, depending on what is available."""
+    arms = list(CLASSICAL_ARMS)
+    if deepforest:
+        arms += DF_ARMS
+    if hsi:
+        arms += HSI_ARMS + (DFH_ARMS if deepforest else [])
+    return arms
+
+
+ARM_GROUPS = ("classical", "df", "hsi")
+
+
+def arm_group(arm: Arm) -> str:
+    """classical | df | hsi  (DeepForest filtered by real NDVI counts as 'hsi': it needs the cube)."""
+    if arm.needs_hsi:
+        return "hsi"
+    return "df" if arm.is_detector else "classical"
+
+
+def arm_names_in(groups) -> List[str]:
+    """Names of the arms in the given groups. A DeepForest+hyperspectral arm needs both 'df' and 'hsi'."""
+    groups = set(groups)
+    unknown = groups - set(ARM_GROUPS)
+    if unknown:
+        raise ValueError(f"unknown action groups {sorted(unknown)}; use {ARM_GROUPS}")
+    out = []
+    for a in ARMS:
+        g = arm_group(a)
+        if g in groups and (not (a.is_detector and a.needs_hsi) or "df" in groups):
+            out.append(a.name)
+    return out
+
+
 ARM_INDEX: Dict[str, int] = {a.name: i for i, a in enumerate(ARMS)}
 
 
@@ -89,8 +170,10 @@ ARM_INDEX: Dict[str, int] = {a.name: i for i, a in enumerate(ARMS)}
 class Signals:
     """Per-scene rasters the arms work on (all float32, same shape)."""
 
-    index: Dict[str, np.ndarray]      # ndvi, exg
+    index: Dict[str, np.ndarray]      # ndvi, exg, dark (+ hsi when real hyperspectral is available)
     peaks: Dict[str, np.ndarray]      # brightness used to find tree tops
+    rgb: Optional[np.ndarray] = None  # uint8 photo, for the detector
+    detections: Optional[tuple] = None   # (boxes, scores, seconds) of DeepForest, computed once
 
 
 def exg_chromatic(rgb: np.ndarray) -> np.ndarray:
@@ -112,7 +195,32 @@ def make_signals(rgb: np.ndarray, ndvi: np.ndarray, nir: np.ndarray) -> Signals:
         index={"ndvi": ndvi.astype(np.float32), "exg": exg_chromatic(rgb),
                "dark": cv2.GaussianBlur(-lum, (0, 0), 1.0)},
         peaks={"ndvi": nir.astype(np.float32), "exg": lum, "dark": lum},
+        rgb=rgb,
     )
+
+
+def filter_by_index(boxes: np.ndarray, index: np.ndarray, threshold: float) -> np.ndarray:
+    """Keep boxes whose median index inside the box is >= threshold."""
+    if len(boxes) == 0:
+        return boxes
+    h, w = index.shape
+    keep = np.zeros(len(boxes), bool)
+    for i, (x0, y0, x1, y1) in enumerate(np.round(boxes).astype(int)):
+        x0, y0 = max(0, x0), max(0, y0)
+        x1, y1 = min(w, max(x1, x0 + 1)), min(h, max(y1, y0 + 1))
+        keep[i] = np.median(index[y0:y1, x0:x1]) >= threshold
+    return boxes[keep]
+
+
+def detect(sig: Signals, weights: Optional[str] = None) -> tuple:
+    """Run DeepForest once per scene and cache (boxes, scores, seconds) in the signals."""
+    if sig.detections is None:
+        from .deepforest import get_detector
+
+        if sig.rgb is None:
+            raise ValueError("DeepForest needs the RGB photo (Signals.rgb)")
+        sig.detections = get_detector(weights).predict(sig.rgb)
+    return sig.detections
 
 
 def otsu_threshold(x: np.ndarray, bins: int = 256) -> float:
@@ -160,6 +268,13 @@ def labels_to_boxes(labels: np.ndarray, min_area: int) -> np.ndarray:
 
 def run_arm(arm: Arm, sig: Signals, gsd_m: float = 0.1) -> np.ndarray:
     """Execute one arm. Returns crown boxes in pixel coordinates."""
+    if arm.is_detector:
+        boxes, scores, _ = detect(sig)
+        boxes = boxes[scores >= arm.score]
+        if arm.signal != "rgb":
+            boxes = filter_by_index(boxes, sig.index[arm.signal], DF_NDVI_FILTER)
+        return boxes
+
     mask = arm_mask(arm, sig)
 
     if arm.algorithm == "cc":

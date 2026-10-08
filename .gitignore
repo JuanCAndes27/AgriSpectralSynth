@@ -64,7 +64,8 @@ datasets/milliontrees/
 datasets/generated/
 datasets/tmp/
 
-# Pesos de modelos
+# Pesos de modelos (DeepForest: models/deepforest/NEON.pt)
+models/
 *.pt
 *.pth
 *.onnx
