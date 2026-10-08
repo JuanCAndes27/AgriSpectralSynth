@@ -90,3 +90,25 @@ def test_save_geotiff_roundtrip(tmp_path):
     NDVI().save_geotiff(ndvi, f)
     with rasterio.open(f) as src:
         np.testing.assert_array_equal(src.read(1), ndvi)
+
+
+def test_exports_and_statistics(tmp_path):
+    import cv2
+
+    ndvi = np.linspace(-1, 1, 400, dtype=np.float32).reshape(20, 20)
+    idx = NDVI()
+    idx.save_png(ndvi, tmp_path / "c.png")
+    idx.save_png(ndvi, tmp_path / "g.png", color=False)
+    idx.save_jpg(ndvi, tmp_path / "c.jpg", color=True)
+    assert cv2.imread(str(tmp_path / "c.png")).shape == (20, 20, 3)
+    assert cv2.imread(str(tmp_path / "g.png"), cv2.IMREAD_UNCHANGED).ndim == 2
+    assert (tmp_path / "c.jpg").exists()
+    st = idx.statistics(ndvi)
+    assert st["minimum"] == -1 and st["maximum"] == 1 and abs(st["median"]) < 0.01
+    idx.summary()
+
+
+@pytest.mark.filterwarnings("ignore::RuntimeWarning")
+def test_nan_and_inf_are_sanitised():
+    out = NDVI().compute(np.array([np.nan, 0.1]), np.array([0.5, np.inf]))
+    assert np.isfinite(out).all()

@@ -197,3 +197,45 @@ def test_pure_vegetation_ndvi_equals_endmember_ndvi(sid):
     expected = (nir - red) / (nir + red)
     got = NDVI().compute(b[s.roles["red"]], b[s.roles["nir"]])
     np.testing.assert_allclose(got, expected, atol=1e-4)
+
+
+# ---------------------------------------------------------------------------
+# Measured response curves (srf_file) and IR-cut filter
+# ---------------------------------------------------------------------------
+
+def test_measured_srf_file(tmp_path):
+    """A band can use a measured curve (CSV) instead of the Gaussian."""
+    (tmp_path / "srf").mkdir()
+    wl = np.arange(640, 691)
+    flat = np.where((wl >= 650) & (wl <= 680), 1.0, 0.0)          # rectangular 650-680 nm
+    np.savetxt(tmp_path / "srf" / "red.csv", np.c_[wl, flat], delimiter=",",
+               header="wavelength_nm,response", comments="")
+    f = tmp_path / "cam.yaml"
+    f.write_text("id: cam_srf\nname: test\ngsd_m: 0.1\nsources: [test]\nbands:\n"
+                 "  - {name: R, center: 665, fwhm: 30, srf_file: srf/red.csv}\n"
+                 "  - {name: N, center: 850, fwhm: 40}\nroles: {red: R, nir: N}\n", encoding="utf-8")
+    s = load_sensor(str(f))
+    r = s.srf_matrix()[0]
+    inside = (WAVELENGTHS >= 650) & (WAVELENGTHS <= 680)
+    assert r[inside].min() == 1.0 and r[~inside].max() == 0.0       # the measured shape, not a Gaussian
+    assert fwhm_of(r) == pytest.approx(30, abs=1)
+
+
+def test_bad_srf_file(tmp_path):
+    from agrispectralsynth.sensors.srf import tabulated_srf
+
+    p = tmp_path / "zero.csv"
+    np.savetxt(p, np.c_[[1100, 1200], [1, 1]], delimiter=",", header="wavelength_nm,response", comments="")
+    with pytest.raises(ValueError):
+        tabulated_srf(p)                                              # outside 400-1000 nm
+
+
+def test_ir_cut_attenuates_camera_red():
+    cam = load_sensor("rgb_camera")
+    r = cam.srf_matrix()[[b.name for b in cam.band_list].index("Red")]
+    assert r[WAVELENGTHS == 610][0] > 0.9 and r[WAVELENGTHS == 720][0] < 0.05
+
+
+def test_sensor_summary_runs(capsys):
+    load_sensor("sentinel2a_msi").summary()
+    assert "B8A" in capsys.readouterr().out
