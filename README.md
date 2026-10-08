@@ -81,6 +81,8 @@ Un **bandido contextual** elige, para cada escena, cuál de 32 métodos de delin
 
 👉 Diseño de la recompensa, protocolo, resultados y limitaciones: [`docs/agente/README.md`](docs/agente/README.md)
 
+👉 Conteo con DeepForest y validación del NDVI sintético con hiperespectral NEON real (v0.5): [`docs/agente/neon_hiperespectral/README.md`](docs/agente/neon_hiperespectral/README.md)
+
 ```bash
 python scripts/download_neontree_benchmark.py
 agrispectralsynth-agent rewards  --images data/benchmarks/NeonTreeEvaluation/evaluation/RGB \
@@ -88,6 +90,11 @@ agrispectralsynth-agent rewards  --images data/benchmarks/NeonTreeEvaluation/eva
 agrispectralsynth-agent evaluate --table results/agent --seeds 10
 agrispectralsynth-agent train    --table results/agent --out results/agent/agent.json
 agrispectralsynth-agent apply    --agent results/agent/agent.json --input data/raw --output results/conteo
+
+# v0.5: DeepForest + hiperespectral NEON real como acciones (pip install -e ".[deepforest]")
+agrispectralsynth-agent download-deepforest
+agrispectralsynth-agent rewards ... --deepforest --hsi-dir data/benchmarks/NeonTreeEvaluation/evaluation/Hyperspectral
+agrispectralsynth-agent evaluate --table results/agent --time-weight 0.1 --actions classical,df
 ```
 
 ## Tests
@@ -107,14 +114,16 @@ src/agrispectralsynth/
 ├── indices/           NDVI, GNDVI, NDRE, SAVI, MSAVI, EVI
 ├── segmentation/      máscaras de vegetación y copas
 ├── sensors/           lectura de los YAML de sensores y respuestas espectrales (SRF)
-├── agent/             agente: verdad de campo, recompensa, acciones, contexto, bandidos, experimentos
+├── agent/             agente: verdad de campo, recompensa, acciones (clásicas, DeepForest, hiperespectral NEON),
+│                      contexto, bandidos, experimentos
 ├── datasets/          gestor de MillionTrees (descarga, polígonos, máscaras reales)
 └── yolo/              etiquetas YOLO-seg desde máscaras
 sensors/               definición de cada sensor (YAML) + documento explicativo  ← datos
 spectral_library/      espectros de los materiales (CSV)                       ← datos
-docs/agente/           documento del agente, figuras y resultados
+docs/agente/           documento del agente, figuras y resultados (neon_hiperespectral/: v0.5)
 scripts/               generate_synthetic.py, build_spectral_library.py, make_sensor_figures.py,
-                       download_neontree_benchmark.py, download_milliontrees.py
+                       download_neontree_benchmark.py, download_milliontrees.py,
+                       experimento_neon_hiperespectral.py
 configs/default.yaml
 assets/samples/        imágenes de muestra (incluye la comparación v0.1 vs v0.2)
 ```
