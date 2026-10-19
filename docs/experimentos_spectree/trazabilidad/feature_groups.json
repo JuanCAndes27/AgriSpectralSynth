@@ -1,0 +1,57 @@
+{
+ "C0": [
+  "exg_mean",
+  "exg_std",
+  "lum_mean",
+  "lum_std",
+  "dark_fraction",
+  "green_dark_corr",
+  "texture",
+  "gran_2m",
+  "gran_4m",
+  "gran_7m",
+  "otsu_exg",
+  "green_blobs_ha",
+  "green_blob_area_m2",
+  "green_blob_fill",
+  "dark_blobs_ha",
+  "dark_blob_area_m2",
+  "dark_blob_fill",
+  "sensor_dji_mavic3m",
+  "sensor_dji_phantom4m",
+  "sensor_micasense_rededge_mx",
+  "sensor_parrot_sequoia_plus"
+ ],
+ "C1_extra": [
+  "ndvi_mean",
+  "ndvi_std",
+  "ndvi_p90"
+ ],
+ "C2_extra": [
+  "ndvi_mean",
+  "ndvi_std",
+  "ndvi_p90",
+  "veg_fraction",
+  "nir_mean",
+  "nir_std",
+  "ndre_mean",
+  "ndre_std",
+  "ndvi_frac05"
+ ],
+ "C3_extra": [
+  "vari_mean",
+  "vari_std",
+  "vari_p90",
+  "gli_mean",
+  "gli_std",
+  "chrom_r",
+  "chrom_g",
+  "chrom_b",
+  "exg_p90"
+ ],
+ "C4_extra": [
+  "real_ndvi_mean",
+  "real_ndvi_std",
+  "real_ndvi_p90"
+ ]
+}

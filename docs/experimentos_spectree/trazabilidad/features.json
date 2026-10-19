@@ -1,0 +1,382 @@
+{
+ "grupos": {
+  "C0": [
+   "exg_mean",
+   "exg_std",
+   "lum_mean",
+   "lum_std",
+   "dark_fraction",
+   "green_dark_corr",
+   "texture",
+   "gran_2m",
+   "gran_4m",
+   "gran_7m",
+   "otsu_exg",
+   "green_blobs_ha",
+   "green_blob_area_m2",
+   "green_blob_fill",
+   "dark_blobs_ha",
+   "dark_blob_area_m2",
+   "dark_blob_fill",
+   "sensor_dji_mavic3m",
+   "sensor_dji_phantom4m",
+   "sensor_micasense_rededge_mx",
+   "sensor_parrot_sequoia_plus"
+  ],
+  "C1": [
+   "exg_mean",
+   "exg_std",
+   "lum_mean",
+   "lum_std",
+   "dark_fraction",
+   "green_dark_corr",
+   "texture",
+   "gran_2m",
+   "gran_4m",
+   "gran_7m",
+   "otsu_exg",
+   "green_blobs_ha",
+   "green_blob_area_m2",
+   "green_blob_fill",
+   "dark_blobs_ha",
+   "dark_blob_area_m2",
+   "dark_blob_fill",
+   "sensor_dji_mavic3m",
+   "sensor_dji_phantom4m",
+   "sensor_micasense_rededge_mx",
+   "sensor_parrot_sequoia_plus",
+   "ndvi_mean",
+   "ndvi_std",
+   "ndvi_p90"
+  ],
+  "C2": [
+   "exg_mean",
+   "exg_std",
+   "lum_mean",
+   "lum_std",
+   "dark_fraction",
+   "green_dark_corr",
+   "texture",
+   "gran_2m",
+   "gran_4m",
+   "gran_7m",
+   "otsu_exg",
+   "green_blobs_ha",
+   "green_blob_area_m2",
+   "green_blob_fill",
+   "dark_blobs_ha",
+   "dark_blob_area_m2",
+   "dark_blob_fill",
+   "sensor_dji_mavic3m",
+   "sensor_dji_phantom4m",
+   "sensor_micasense_rededge_mx",
+   "sensor_parrot_sequoia_plus",
+   "ndvi_mean",
+   "ndvi_std",
+   "ndvi_p90",
+   "veg_fraction",
+   "nir_mean",
+   "nir_std",
+   "ndre_mean",
+   "ndre_std",
+   "ndvi_frac05"
+  ],
+  "C3": [
+   "exg_mean",
+   "exg_std",
+   "lum_mean",
+   "lum_std",
+   "dark_fraction",
+   "green_dark_corr",
+   "texture",
+   "gran_2m",
+   "gran_4m",
+   "gran_7m",
+   "otsu_exg",
+   "green_blobs_ha",
+   "green_blob_area_m2",
+   "green_blob_fill",
+   "dark_blobs_ha",
+   "dark_blob_area_m2",
+   "dark_blob_fill",
+   "sensor_dji_mavic3m",
+   "sensor_dji_phantom4m",
+   "sensor_micasense_rededge_mx",
+   "sensor_parrot_sequoia_plus",
+   "vari_mean",
+   "vari_std",
+   "vari_p90",
+   "gli_mean",
+   "gli_std",
+   "chrom_r",
+   "chrom_g",
+   "chrom_b",
+   "exg_p90"
+  ],
+  "C4": [
+   "exg_mean",
+   "exg_std",
+   "lum_mean",
+   "lum_std",
+   "dark_fraction",
+   "green_dark_corr",
+   "texture",
+   "gran_2m",
+   "gran_4m",
+   "gran_7m",
+   "otsu_exg",
+   "green_blobs_ha",
+   "green_blob_area_m2",
+   "green_blob_fill",
+   "dark_blobs_ha",
+   "dark_blob_area_m2",
+   "dark_blob_fill",
+   "sensor_dji_mavic3m",
+   "sensor_dji_phantom4m",
+   "sensor_micasense_rededge_mx",
+   "sensor_parrot_sequoia_plus",
+   "real_ndvi_mean",
+   "real_ndvi_std",
+   "real_ndvi_p90"
+  ],
+  "V05": [
+   "veg_fraction",
+   "ndvi_mean",
+   "ndvi_std",
+   "ndvi_p90",
+   "exg_mean",
+   "exg_std",
+   "lum_mean",
+   "lum_std",
+   "dark_fraction",
+   "green_dark_corr",
+   "texture",
+   "gran_2m",
+   "gran_4m",
+   "gran_7m",
+   "otsu_exg",
+   "green_blobs_ha",
+   "green_blob_area_m2",
+   "green_blob_fill",
+   "dark_blobs_ha",
+   "dark_blob_area_m2",
+   "dark_blob_fill",
+   "sensor_dji_mavic3m",
+   "sensor_dji_phantom4m",
+   "sensor_micasense_rededge_mx",
+   "sensor_parrot_sequoia_plus"
+  ]
+ },
+ "definiciones": {
+  "veg_fraction": {
+   "definicion": "fracción de vegetación media del motor (ExG suavizado)",
+   "origen": "sintético",
+   "unidad": "0-1"
+  },
+  "ndvi_mean": {
+   "definicion": "NDVI sintético medio",
+   "origen": "sintético",
+   "unidad": "-"
+  },
+  "ndvi_std": {
+   "definicion": "desv. NDVI sintético",
+   "origen": "sintético",
+   "unidad": "-"
+  },
+  "ndvi_p90": {
+   "definicion": "p90 NDVI sintético",
+   "origen": "sintético",
+   "unidad": "-"
+  },
+  "exg_mean": {
+   "definicion": "ExG cromático medio",
+   "origen": "RGB",
+   "unidad": "-"
+  },
+  "exg_std": {
+   "definicion": "desv. ExG",
+   "origen": "RGB",
+   "unidad": "-"
+  },
+  "lum_mean": {
+   "definicion": "luminancia media",
+   "origen": "RGB",
+   "unidad": "0-1"
+  },
+  "lum_std": {
+   "definicion": "desv. luminancia",
+   "origen": "RGB",
+   "unidad": "0-1"
+  },
+  "dark_fraction": {
+   "definicion": "fracción bajo Otsu de luminancia",
+   "origen": "RGB",
+   "unidad": "0-1"
+  },
+  "green_dark_corr": {
+   "definicion": "correlación ExG vs oscuridad",
+   "origen": "RGB",
+   "unidad": "-"
+  },
+  "texture": {
+   "definicion": "magnitud media del gradiente",
+   "origen": "RGB",
+   "unidad": "-"
+  },
+  "gran_2m": {
+   "definicion": "fracción verde que sobrevive apertura 2 m",
+   "origen": "RGB",
+   "unidad": "0-1"
+  },
+  "gran_4m": {
+   "definicion": "idem 4 m",
+   "origen": "RGB",
+   "unidad": "0-1"
+  },
+  "gran_7m": {
+   "definicion": "idem 7 m",
+   "origen": "RGB",
+   "unidad": "0-1"
+  },
+  "otsu_exg": {
+   "definicion": "umbral de Otsu del ExG",
+   "origen": "RGB",
+   "unidad": "-"
+  },
+  "green_blobs_ha": {
+   "definicion": "objetos verdes por ha",
+   "origen": "RGB",
+   "unidad": "1/ha"
+  },
+  "green_blob_area_m2": {
+   "definicion": "log10 área mediana objetos verdes",
+   "origen": "RGB",
+   "unidad": "log m2"
+  },
+  "green_blob_fill": {
+   "definicion": "relleno mediano objetos verdes",
+   "origen": "RGB",
+   "unidad": "0-1"
+  },
+  "dark_blobs_ha": {
+   "definicion": "objetos oscuros por ha",
+   "origen": "RGB",
+   "unidad": "1/ha"
+  },
+  "dark_blob_area_m2": {
+   "definicion": "log10 área mediana objetos oscuros",
+   "origen": "RGB",
+   "unidad": "log m2"
+  },
+  "dark_blob_fill": {
+   "definicion": "relleno objetos oscuros",
+   "origen": "RGB",
+   "unidad": "0-1"
+  },
+  "nir_mean": {
+   "definicion": "NIR sintético medio",
+   "origen": "sintético",
+   "unidad": "reflectancia"
+  },
+  "nir_std": {
+   "definicion": "desv. NIR sintético",
+   "origen": "sintético",
+   "unidad": "reflectancia"
+  },
+  "ndre_mean": {
+   "definicion": "NDRE sintético medio",
+   "origen": "sintético",
+   "unidad": "-"
+  },
+  "ndre_std": {
+   "definicion": "desv. NDRE sintético",
+   "origen": "sintético",
+   "unidad": "-"
+  },
+  "ndvi_frac05": {
+   "definicion": "fracción NDVI sintético > 0.5",
+   "origen": "sintético",
+   "unidad": "0-1"
+  },
+  "vari_mean": {
+   "definicion": "VARI medio",
+   "origen": "RGB",
+   "unidad": "-"
+  },
+  "vari_std": {
+   "definicion": "desv. VARI",
+   "origen": "RGB",
+   "unidad": "-"
+  },
+  "vari_p90": {
+   "definicion": "p90 VARI",
+   "origen": "RGB",
+   "unidad": "-"
+  },
+  "gli_mean": {
+   "definicion": "GLI medio",
+   "origen": "RGB",
+   "unidad": "-"
+  },
+  "gli_std": {
+   "definicion": "desv. GLI",
+   "origen": "RGB",
+   "unidad": "-"
+  },
+  "chrom_r": {
+   "definicion": "cromaticidad r media",
+   "origen": "RGB",
+   "unidad": "0-1"
+  },
+  "chrom_g": {
+   "definicion": "cromaticidad g media",
+   "origen": "RGB",
+   "unidad": "0-1"
+  },
+  "chrom_b": {
+   "definicion": "cromaticidad b media",
+   "origen": "RGB",
+   "unidad": "0-1"
+  },
+  "exg_p90": {
+   "definicion": "p90 ExG",
+   "origen": "RGB",
+   "unidad": "-"
+  },
+  "real_ndvi_mean": {
+   "definicion": "NDVI real NEON medio (1 m)",
+   "origen": "HSI",
+   "unidad": "-"
+  },
+  "real_ndvi_std": {
+   "definicion": "desv. NDVI real",
+   "origen": "HSI",
+   "unidad": "-"
+  },
+  "real_ndvi_p90": {
+   "definicion": "p90 NDVI real",
+   "origen": "HSI",
+   "unidad": "-"
+  },
+  "sensor_dji_mavic3m": {
+   "definicion": "sensor nominal (one-hot)",
+   "origen": "metadato",
+   "unidad": "0/1"
+  },
+  "sensor_dji_phantom4m": {
+   "definicion": "sensor nominal (one-hot)",
+   "origen": "metadato",
+   "unidad": "0/1"
+  },
+  "sensor_micasense_rededge_mx": {
+   "definicion": "sensor nominal (one-hot)",
+   "origen": "metadato",
+   "unidad": "0/1"
+  },
+  "sensor_parrot_sequoia_plus": {
+   "definicion": "sensor nominal (one-hot)",
+   "origen": "metadato",
+   "unidad": "0/1"
+  }
+ }
+}

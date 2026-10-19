@@ -1,0 +1,4 @@
+selector,ms_por_decision,coeficientes,entradas_matrices,s_entrenamiento
+LinUCB,0.037288463114818426,1040,27040,
+LinUCB-F,0.5280373032787867,468,219024,
+Ridge,,1040,27040,0.007290608999937831

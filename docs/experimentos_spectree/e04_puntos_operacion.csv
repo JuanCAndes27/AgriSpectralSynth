@@ -1,0 +1,6 @@
+fold,sbs,clasico,lam_LinUCB-F,lam_CheapRule
+0,df_rgb_s0.3,wsd_exg-otsu_4m,0.0,0.05
+1,df_rgb_s0.2,wsd_ndvi-otsu_4m,0.0,0.05
+2,df_rgb_s0.2,wsd_ndvi-otsu_4m,0.0,0.1
+3,df_rgb_s0.3,wsd_exg-otsu_4m,0.0,0.05
+4,df_rgb_s0.3,wsd_ndvi-otsu_4m,0.0,0.05

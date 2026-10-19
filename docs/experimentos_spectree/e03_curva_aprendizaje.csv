@@ -1,0 +1,18 @@
+parcelas_entrenamiento,selector,recompensa_macro,consultas,pares_unicos,contextos,pares_posibles
+10,LinUCB-F,0.5309926791895307,,,,
+10,Ridge,0.5285127021647209,,,,
+10,SBS,0.6098240453178335,,,,
+20,LinUCB-F,0.5350495514449853,,,,
+20,Ridge,0.5381175440540954,,,,
+20,SBS,0.5985156451666477,,,,
+40,LinUCB-F,0.5310466742072366,,,,
+40,Ridge,0.5646727222045154,,,,
+40,SBS,0.623420511234412,,,,
+80,LinUCB-F,0.573121068805182,,,,
+80,Ridge,0.6004201372974618,,,,
+80,SBS,0.6103782565015435,,,,
+todas,LinUCB-F,0.5675651248136677,,,,
+todas,Ridge,0.6186190226190045,,,,
+todas,SBS,0.6065401769574935,,,,
+todas,LinUCB-F consultas (1 pasadas),,512.0,512.0,512.0,20480.0
+todas,LinUCB-F consultas (3 pasadas),,1536.0,1213.0,512.0,20480.0
