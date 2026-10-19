@@ -28,6 +28,12 @@ Las predicciones regeneradas (S01–S02) coinciden con la tabla de la versión 0
 9. **Criterio de SBS:** maximiza la recompensa media **por contexto** en entrenamiento (micro), como en la v0.5, no la media macro por sitio. Es el criterio declarado en el pre-registro.
 10. **E02, F3a:** la calibración lineal tiene un intercepto de ≈ 0.44 y una pendiente de ≈ 0.5. El NDVI calibrado nunca baja de ≈ 0.4, de modo que el umbral fijo 0.3 conserva todas las cajas. Es una consecuencia mecánica de la escala, no evidencia de que el índice discrimine.
 
+11. **Error de redacción en el pre-registro (§2):** dice que el portafolio de 40 acciones tiene «16 clásicas sobre señales RGB y 16 sobre NDVI sintético». El catálogo real, idéntico al de la v0.5, tiene **18 sobre señales RGB** (14 de ExG y 4 de oscuridad) y **14 sobre NDVI sintético**. El total sigue siendo 32 clásicas + 8 de DeepForest = 40. El análisis usó el catálogo real (`actions.csv`); solo cambia la descripción.
+
+## Verificación independiente
+
+Un agente que no participó en el análisis recalculó 140 afirmaciones del informe a partir de los CSV (`verificacion_informe.md`): 124 coincidían, 13 tenían errores de redondeo, de agregación o de redacción, y 3 no eran verificables con los archivos. Las 13 se corrigieron en el informe. Los veredictos P1–P4 no cambian, salvo que el criterio de latencia de P4 pasa de «falla» a «inconcluso».
+
 ## Advertencias de interpretación
 
 - Todas las comparaciones sobre NeonTreeEvaluation son análisis de un benchmark ya inspeccionado (ver pre-registro).

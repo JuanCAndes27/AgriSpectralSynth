@@ -25,7 +25,7 @@ Cada comparación primaria lleva un intervalo de Bonferroni al 98.75 %. El marge
 | **P1** (E01) | Contexto C2 (RGB + 9 atributos sintéticos) frente a C0 (solo RGB), con LinUCB-F y 40 acciones | −0.010 [−0.037, +0.016] | **No respaldada** (inconclusa, con estimación negativa) |
 | **P2** (E03) | Selector elegido en validación interna frente a SBS | +0.015 [−0.007, +0.039] | **Inconclusa** |
 | **P3** (E02) | Filtro sintético calibrado con umbral ajustado frente a DeepForest sin filtro (ΔF1) | 0.000 [0, 0] | **No respaldada**: el umbral óptimo es «no filtrar» |
-| **P4** (E04) | LinUCB-F frente a DeepForest fijo: no inferioridad y menor latencia | ΔF1 −0.028 [−0.063, −0.000]; MAE ×1.13; Δt −0.04 s [−0.35, +0.14] | **No respaldada** en ninguno de los tres criterios |
+| **P4** (E04) | LinUCB-F frente a DeepForest fijo: no inferioridad y menor latencia | ΔF1 −0.028 [−0.063, −0.000]; MAE ×1.13; Δt −0.04 s [−0.35, +0.14] | **No respaldada**: falla en F1 y en MAE; la menor latencia es inconclusa |
 
 Ninguna de las cuatro afirmaciones centrales del sistema queda respaldada. La evidencia apunta en una dirección consistente:
 - el portafolio sí contiene margen de selección (el VBS supera al SBS en +0.067 [+0.046, +0.089]);
@@ -49,7 +49,7 @@ Ninguna de las cuatro afirmaciones centrales del sistema queda respaldada. La ev
 | LinUCB | bandido | 0.579 | 0.574 | 0.650 | 0.650 | 10.9 | −22 % | −0.028 [−0.052, −0.004] | −42 % |
 | Thompson | bandido | 0.573 | 0.541 | 0.645 | 0.629 | 11.3 | −24 % | −0.033 [−0.057, −0.010] | −49 % |
 | LinUCB-F | bandido | 0.568 | 0.584 | 0.642 | 0.653 | 10.6 | −21 % | −0.039 [−0.066, −0.015] | −58 % |
-| Aleatorio | ninguna | 0.169 | 0.076 | 0.310 | 0.283 | 28.6 | +13 % | −0.437 | — |
+| Aleatorio | ninguna | 0.169 | 0.076 | 0.310 | 0.283 | 28.6 | +12 % | −0.437 | — |
 
 - **Los bandidos pierden frente al SBS.** Las tres variantes quedan por debajo de la mejor acción fija con intervalos que excluyen el cero. La dispersión entre semillas es pequeña (desviación estándar 0.004–0.014) frente a la variación entre sitios.
 - **Resultados por sitio.** [`e00_por_sitio.csv`](e00_por_sitio.csv) muestra que la diferencia de LinUCB-F frente al SBS cambia de signo entre sitios: va de −0.17 (SERC, SOAP) a +0.04 (DELA, SCBI).
@@ -77,7 +77,7 @@ Se mantuvieron las mismas 40 acciones, recompensas y particiones. Solo cambió e
 *Recompensa macro por sitio. SBS = 0.607. Fuente: [`e01_resumen.csv`](e01_resumen.csv) y [`e01_comparaciones.csv`](e01_comparaciones.csv).*
 
 **Lectura.**
-- **Ningún contexto con atributos sintéticos supera a C0 (solo RGB) con ningún selector.** Con Ridge, C2 es peor que C0: −0.027 [−0.063, −0.002].
+- **Ningún contexto con atributos sintéticos supera a C0 (solo RGB) de forma concluyente con ningún selector.** La única mejora puntual es C1 con LinUCB (+0.013 [−0.005, +0.031]), cuyo intervalo contiene el cero. Con Ridge, C2 es peor que C0: −0.027 [−0.063, −0.002].
 - **No hay ventaja específica de la síntesis frente a transformaciones RGB de igual dimensión.** C2 − C3 da +0.005 [−0.013, +0.023] con LinUCB-F y −0.013 [−0.045, +0.012] con Ridge.
 - **Ni siquiera el NDVI medido mejora la selección.** C4 − C0 da −0.011 con LinUCB-F y −0.009 con Ridge, ambos con intervalos que contienen el cero. El límite no está en la fidelidad del NDVI sino en lo poco que el NDVI informa sobre qué método conviene.
 - **El mejor selector observado no usa síntesis.** Es Ridge con contexto solo RGB: +0.018 [+0.003, +0.036] frente al SBS. Es exploratorio, porque esta comparación no estaba pre-registrada como primaria.
@@ -166,23 +166,25 @@ Contexto de la v0.5 (25 atributos) y 40 acciones constantes. En prueba, todas la
 
 ![E04](figs/e04_latencia.png)
 
-| Método | Latencia total (media / mediana / p95) | Síntesis | Contexto | Selección | Acción | F1 macro (189) | MAE conteo | % DeepForest |
+| Método | Latencia total (media / mediana / p95) | Síntesis | Contexto | Selección | Acción | F1 macro (189 parcelas, solo Mavic 3M)ᵃ | MAE conteo | % DeepForest |
 |---|---|---|---|---|---|---|---|---|
-| Clásico fijo | 0.027 / 0.021 / 0.046 s | — | 0.006 | — | 0.021 | 0.351 | 26.7 | 0 % |
+| Clásico fijo | 0.027 / 0.020 / 0.046 s | — | 0.006 | — | 0.021 | 0.351 | 26.7 | 0 % |
 | DeepForest fijo | 2.88 / 2.89 / 3.01 s | — | — | — | 2.88 | **0.671** | **9.2** | 100 % |
 | Regla barata | 2.96 / 2.96 / 3.10 s | — | 0.050 | 0.000 | 2.91 | 0.671 | 9.2 | 100 % |
 | LinUCB-F | 2.84 / 2.99 / 3.11 s | 0.023 | 0.050 | 0.0003 | 2.77 | 0.643 | 10.5 | 99 % |
 
+*ᵃ La calidad de E04 se calcula solo con la proyección Mavic 3M (despliegue con un dron; desviación 5). Por eso difiere levemente de E00, que promedia los cuatro sensores (LinUCB-F: 0.642 / 10.6).*
+
 **P4:**
 - ΔF1 = −0.028 [−0.063, −0.000], fuera de la tolerancia de −0.02;
 - MAE ×1.13, por encima de 1.10;
-- Δlatencia = −0.04 s [−0.35, +0.14]; no se demuestra menor latencia.
+- Δlatencia = −0.04 s [−0.35, +0.14]: más rápido en promedio, pero el intervalo (98.75 %) contiene el cero, así que es inconcluso.
 
-**No respaldada.**
+**No respaldada**, porque falla en F1 y en MAE.
 
 **Lectura.**
 - **El contexto no es el cuello de botella.** La síntesis y los atributos cuestan 0.07 s, el 2.5 % de DeepForest. El problema es que el selector no aprende cuándo prescindir del detector sin perder calidad.
-- **El oráculo sí tiene un punto de operación válido.** En la grilla de E08, con λ = 0.05, el VBS mantiene F1 = 0.678 y MAE = 4.4 en 2.54 s frente a 3.34 s, un ahorro del 24 %. Con λ = 0.1 ya viola la tolerancia (F1 = 0.592).
+- **El oráculo sí tiene un punto de operación válido.** En la grilla de E08, con λ = 0.05, el VBS mantiene F1 = 0.678 y MAE = 4.4 en 2.54 s frente a 3.34 s, un ahorro del 24 %. Esos tiempos son los de acción medidos en S01, con dos procesos en paralelo; en la medición aislada de E04, DeepForest tarda 2.88 s. Con λ = 0.1 ya viola la tolerancia (F1 = 0.592).
 
   El margen operativo existe, pero es menor que el «3.3 → 1.6 s» del artículo, que no cumple las tolerancias de calidad.
 
@@ -203,13 +205,13 @@ Los estratos se definieron por terciles calculados en el entrenamiento de cada p
 
 **Lectura.**
 - **El margen de selección está en las escenas abiertas.** Se concentra en baja densidad, copas grandes y bien separadas. Allí el VBS supera al SBS en +0.2 y Ridge captura una parte (+0.07 en copas separadas).
-- **En escenas densas o con copas que se tocan, DeepForest fijo es difícil de mejorar.** El VBS solo le saca +0.04 y ningún selector lo supera.
+- **En escenas densas o con copas que se tocan, el margen es menor y los selectores apenas lo aprovechan.** El VBS supera al SBS en +0.037 (densidad alta), +0.059 (copas poco separadas) y +0.066 (solapamiento alto). ExtraTrees y Ridge superan al SBS solo por +0.004 a +0.016.
 
 Esto contradice la motivación del artículo: **SpecTree no resuelve la superposición de copas**, y su dominio de utilidad potencial son los bosques abiertos.
 
 Hay una confusión con el sitio que conviene declarar: el estrato de baja densidad tiene 79 parcelas de solo 6 sitios, sobre todo SJER. Dentro de sitio ([`e05_dentro_de_sitio.csv`](e05_dentro_de_sitio.csv)):
 - en TEAK, Ridge gana +0.069 en el tercil de baja densidad y pierde −0.038 en el de alta;
-- en SJER, ningún selector supera al SBS en ningún tercil.
+- en SJER, Ridge y ExtraTrees no superan al SBS en ningún tercil; LinUCB-F lo supera por +0.010 en el tercil de alta densidad.
 
 ## E06: ¿qué aporta el modelo físico frente a transformaciones simples?
 
@@ -231,7 +233,7 @@ Hay una confusión con el sitio que conviene declarar: el estrato de baja densid
 - **El motor físico no supera a una transformación lineal de ExG.** V1 da el mismo error de NDVI y la misma utilidad como contexto, con 1/6 del costo.
 - **La modulación cromática no afecta al NDVI.** Retirarla (V3) deja el NDVI igual, como predice la proposición 1; la diferencia máxima es 0.010 y solo en píxeles recortados. Sí cambia el nivel de rojo y NIR.
 - **El error depende sobre todo de la estimación de $f$, no del modelo de mezcla.** Los umbrales de ExG más laxos (V4) reducen el sesgo de −0.19 a −0.07.
-- **La correlación de 0.67 del artículo es entre parcelas, no dentro de ellas.** Esa cifra se calculó con todos los píxeles juntos. **Dentro de cada parcela, la correlación media es 0.15 macro por sitio y 0.36 por parcela, y es negativa en 10 de los 20 sitios.** Son sobre todo bosques de dosel cerrado (WREF −0.43, SERC −0.38, LENO −0.32, BART −0.31), donde el NDVI sintético sigue las sombras y no la vegetación.
+- **La correlación de 0.67 del artículo es entre parcelas, no dentro de ellas.** Esa cifra se calculó con todos los píxeles juntos. **Dentro de cada parcela, con los cuatro sensores, la correlación media es 0.15 macro por sitio y 0.37 por parcela, y es negativa en 10 de los 20 sitios.** Son sobre todo bosques de dosel cerrado (WREF −0.41, SERC −0.35, LENO −0.31, BART −0.30), donde el NDVI sintético sigue las sombras y no la vegetación.
 - **La única variante que reproduce el patrón espacial es supervisada.** V6, la regresión RGB → NDVI ajustada con NEON, logra r = 0.50 dentro de la parcela y sesgo ≈ 0. Aun así, como contexto no mejora la selección (−0.003).
 
 ## E07: procedencia de NEON.pt y transferencia externa
@@ -259,7 +261,7 @@ El exceso de acciones perjudica al bandido sin aportar margen.
 ## E09: robustez de las métricas y escenas vacías
 
 **Sensibilidad al IoU** ([`e09_metodos_fijos.csv`](e09_metodos_fijos.csv), [`e09_selectores.csv`](e09_selectores.csv)).
-- **El criterio de emparejamiento no importa.** Maximizar la suma de IoU (el de la v0.5) y maximizar el número de pares válidos difieren en ≤ 0.003 de F1 para todos los métodos y umbrales.
+- **El criterio de emparejamiento no importa.** Maximizar la suma de IoU (el de la v0.5) y maximizar el número de pares válidos difieren en ≤ 0.004 de F1 para todos los métodos y umbrales.
 - **El orden de los métodos es estable entre IoU 0.3 y 0.6:** VBS > Ridge ≈ SBS > bandidos ≫ clásicos.
 - **El nivel de F1 sí cae con el IoU.** DeepForest con s = 0.3 va de 0.724 a IoU 0.3 a 0.498 a IoU 0.6. A IoU 0.6, el SBS recalculado elige s = 0.3 en todas las particiones.
 
@@ -269,7 +271,7 @@ El exceso de acciones perjudica al bandido sin aportar margen.
 |---|---|---|---|
 | DeepForest s = 0.3 | 9.0 | 20.6 | −22 % |
 | DeepForest s = 0.1 | 9.7 | 19.3 | −0.2 % |
-| Mejor clásico RGB | 27.1 | 36.7 | +38 % |
+| Mejor clásico RGB | 27.1 | 36.7 | +37 % |
 
 El sesgo agregado casi nulo de DeepForest con s = 0.1 esconde un MAE de 9.7: los sobreconteos y las omisiones se compensan.
 
@@ -279,7 +281,7 @@ El sesgo agregado casi nulo de DeepForest con s = 0.1 esconde un MAE de 9.7: los
 
 | Control | Resultado |
 |---|---|
-| **a. Proposición 1 (C11)** | En 189 parcelas × 5 sensores (los 4 drones y Sentinel-2A), la diferencia entre el NDVI del motor y NDVI(f) es ≤ 1.5 × 10⁻⁴ fuera de los píxeles saturados (rojo o NIR ≥ 0.999, o rojo + NIR ≤ 10⁻⁶). La fracción saturada tiene media 0.46 % y mediana < 0.01 %, pero llega al 20 % en 4 parcelas de WREF muy oscuras. **La cifra «< 0.2 %» del artículo debe corregirse.** El supuesto de factor cromático común en rojo y NIR se cumple en los 5 sensores. |
+| **a. Proposición 1 (C11)** | En 189 parcelas × 5 sensores (los 4 drones y Sentinel-2A), la diferencia entre el NDVI del motor y NDVI(f) es ≤ 1.5 × 10⁻⁴ fuera de los píxeles saturados (rojo o NIR ≥ 0.999, o rojo + NIR ≤ 10⁻⁶). La fracción saturada tiene media 0.43 % y mediana < 0.01 %. Cuatro parcelas de WREF muy oscuras están entre el 12 y el 20 % (máximo 20.5 %). **La cifra «< 0.2 %» del artículo debe corregirse.** El supuesto de factor cromático común en rojo y NIR se cumple en los 5 sensores. |
 | **b. Resolución (W7)** | Con los mismos 14 algoritmos, el mejor F1 es 0.346 con NDVI sintético a 10 cm, **0.319 con NDVI sintético degradado a 1 m** y **0.234 con NDVI real a 1 m**. Degradar a 1 m explica solo ≈ 25 % de la diferencia entre el sintético y el real. El resto viene del contenido: en el NDVI real, pasto y copas no se separan. ![E10b](figs/e10_resolucion.png) |
 | **c. Registro** | La correlación sintético–real es máxima sin desplazamiento: 0.36, frente a 0.29–0.31 con ±1 m. 102 de 189 parcelas tienen su máximo exactamente en (0, 0). |
 | **d. Orden de agregación (C6)** | Calcular el NDVI a partir del rojo y NIR promediados (sesgo −0.205, r 0.144) o promediar el NDVI (sesgo −0.188, r 0.147) da lo mismo. |
