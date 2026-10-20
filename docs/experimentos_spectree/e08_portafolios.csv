@@ -1,0 +1,25 @@
+lambda,portafolio,policy,reward_macro,f1_macro,acciones_fold0
+0.0,40 (completo),LinUCB-F,0.5675651248136677,0.6424283651437619,
+0.0,40 (completo),Ridge,0.6186190226190045,0.6748814856959502,
+0.0,40 (completo),SBS,0.6065401769574935,0.6708505435481978,
+0.0,40 (completo),VBS,0.6736152926375,0.7072459159826655,
+0.0,4 (codicioso en entrenamiento),LinUCB-F,0.5865694592878559,0.6594198713604499,df_rgb_s0.3;df_rgb_s0.2;df_rgb_s0.4;df_rgb_s0.1
+0.0,4 (codicioso en entrenamiento),Ridge,0.6139138333712595,0.6731966947432717,df_rgb_s0.3;df_rgb_s0.2;df_rgb_s0.4;df_rgb_s0.1
+0.0,4 (codicioso en entrenamiento),SBS,0.6065401769574935,0.6708505435481978,df_rgb_s0.3;df_rgb_s0.2;df_rgb_s0.4;df_rgb_s0.1
+0.0,4 (codicioso en entrenamiento),VBS,0.668746531186579,0.7008191898137952,df_rgb_s0.3;df_rgb_s0.2;df_rgb_s0.4;df_rgb_s0.1
+0.0,8 (codicioso en entrenamiento),LinUCB-F,0.5794715126594816,0.6521783469548543,df_rgb_s0.3;df_rgb_s0.2;df_rgb_s0.4;df_rgb_s0.1;wsd_ndvi_2m;lmw_exg-otsu_7m;df_ndvi_s0.2;lmw_exg-otsu_4m
+0.0,8 (codicioso en entrenamiento),Ridge,0.6152953657247061,0.6764133188821443,df_rgb_s0.3;df_rgb_s0.2;df_rgb_s0.4;df_rgb_s0.1;wsd_ndvi_2m;lmw_exg-otsu_7m;df_ndvi_s0.2;lmw_exg-otsu_4m
+0.0,8 (codicioso en entrenamiento),SBS,0.6065401769574935,0.6708505435481978,df_rgb_s0.3;df_rgb_s0.2;df_rgb_s0.4;df_rgb_s0.1;wsd_ndvi_2m;lmw_exg-otsu_7m;df_ndvi_s0.2;lmw_exg-otsu_4m
+0.0,8 (codicioso en entrenamiento),VBS,0.6691797595360269,0.7016725221811002,df_rgb_s0.3;df_rgb_s0.2;df_rgb_s0.4;df_rgb_s0.1;wsd_ndvi_2m;lmw_exg-otsu_7m;df_ndvi_s0.2;lmw_exg-otsu_4m
+0.1,40 (completo),LinUCB-F,0.2468548450830082,0.526222648443431,
+0.1,40 (completo),Ridge,0.2777693160428286,0.5453330259050139,
+0.1,40 (completo),SBS,0.27467228553818435,0.6708505435481978,
+0.1,40 (completo),VBS,0.4526747811949467,0.5924678217535819,
+0.1,4 (codicioso en entrenamiento),LinUCB-F,0.2747139798234823,0.5404869004496632,df_rgb_s0.3;wsd_exg-otsu_4m;wsd_ndvi-otsu_2m;lmw_exg-otsu_4m
+0.1,4 (codicioso en entrenamiento),Ridge,0.26881220178904686,0.5556605557040053,df_rgb_s0.3;wsd_exg-otsu_4m;wsd_ndvi-otsu_2m;lmw_exg-otsu_4m
+0.1,4 (codicioso en entrenamiento),SBS,0.27467228553818435,0.6708505435481978,df_rgb_s0.3;wsd_exg-otsu_4m;wsd_ndvi-otsu_2m;lmw_exg-otsu_4m
+0.1,4 (codicioso en entrenamiento),VBS,0.3740235187558251,0.589381584249972,df_rgb_s0.3;wsd_exg-otsu_4m;wsd_ndvi-otsu_2m;lmw_exg-otsu_4m
+0.1,8 (codicioso en entrenamiento),LinUCB-F,0.2656427540473402,0.49989016514998996,df_rgb_s0.3;wsd_exg-otsu_4m;wsd_ndvi-otsu_2m;lmw_exg-otsu_4m;wsd_ndvi-otsu_4m;df_rgb_s0.4;df_rgb_s0.2;wsd_exg-otsu_7m
+0.1,8 (codicioso en entrenamiento),Ridge,0.27784193624647124,0.5497098505399254,df_rgb_s0.3;wsd_exg-otsu_4m;wsd_ndvi-otsu_2m;lmw_exg-otsu_4m;wsd_ndvi-otsu_4m;df_rgb_s0.4;df_rgb_s0.2;wsd_exg-otsu_7m
+0.1,8 (codicioso en entrenamiento),SBS,0.27467228553818435,0.6708505435481978,df_rgb_s0.3;wsd_exg-otsu_4m;wsd_ndvi-otsu_2m;lmw_exg-otsu_4m;wsd_ndvi-otsu_4m;df_rgb_s0.4;df_rgb_s0.2;wsd_exg-otsu_7m
+0.1,8 (codicioso en entrenamiento),VBS,0.40676157423580167,0.5738872493440758,df_rgb_s0.3;wsd_exg-otsu_4m;wsd_ndvi-otsu_2m;lmw_exg-otsu_4m;wsd_ndvi-otsu_4m;df_rgb_s0.4;df_rgb_s0.2;wsd_exg-otsu_7m

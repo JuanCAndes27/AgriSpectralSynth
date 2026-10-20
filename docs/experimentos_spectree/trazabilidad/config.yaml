@@ -1,0 +1,10 @@
+objetivo: "SpecTree E00-E09 (ver preregistro.md)"
+codigo_commit: "fd339fa8c2d6e0462a167eec134cff6d0cfbfc1e"
+checkpoint: "DeepForest 1.0.0 NEON.pt"
+checkpoint_sha256: "6d2194194daa694ce99c3daff8d53a95722d5856337466263e9a1bd23f8d282a"
+recompensa: {kappa: 0.25, lambda: 0.0, iou: 0.4, emparejamiento: "hungaro IoU total"}
+selectores: {alpha_linucb: 0.5, eta: 1.0, v_thompson: 0.2, pasadas: 3}
+particiones: {tipo: "sitio", k: 5, semillas: [0, 1, 2, 3, 4]}
+bootstrap: {replicas: 5000, semilla: 12345, unidad: "sitio"}
+versiones: {python: "3.13.16", numpy: "2.5.3", pandas: "3.0.5", torch: "2.14.1+cu130", sklearn: "1.9.1"}
+hardware: "x86_64, 2 núcleos, 1 hilo por proceso"
