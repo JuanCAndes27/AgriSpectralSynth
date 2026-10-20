@@ -30,6 +30,10 @@ Las predicciones regeneradas (S01–S02) coinciden con la tabla de la versión 0
 
 11. **Error de redacción en el pre-registro (§2):** dice que el portafolio de 40 acciones tiene «16 clásicas sobre señales RGB y 16 sobre NDVI sintético». El catálogo real, idéntico al de la v0.5, tiene **18 sobre señales RGB** (14 de ExG y 4 de oscuridad) y **14 sobre NDVI sintético**. El total sigue siendo 32 clásicas + 8 de DeepForest = 40. El análisis usó el catálogo real (`actions.csv`); solo cambia la descripción.
 
+12. **E07, cajas degeneradas:** el protocolo no previó que 29 de las 3382 cajas externas tuvieran ancho o alto < 1 px, todas en el borde de la imagen. Se detectó al validar el formato (xmin, ymin, xmax, ymax, comprobado contra las imágenes `gt/*.png` de los autores) y se descartaron antes de ejecutar ninguna acción. Quedan 3353 copas. Una caja sin área no puede emparejarse, así que mantenerlas solo habría sumado falsos negativos a todas las políticas por igual.
+13. **E07, comparación primaria degenerada:** el Selector-VI (ExtraTrees) elige la acción del SBS en los 218 parches externos. La diferencia es exactamente 0 y la regla del protocolo da «no inferior». Se informa como **trivial**, no como evidencia de transferencia. Los resultados de Ridge·V05 y de V05 frente a C0 en el conjunto externo **no** estaban pre-registrados como primarios y se presentan como exploratorios.
+14. **E07, unidad de remuestreo:** el conjunto externo no tiene sitios. Los intervalos remuestrean parches, que vienen de dos ortoimágenes contiguas, así que son optimistas. El remuestreo por bloques de 10 identificadores consecutivos da intervalos casi idénticos, pero supone un orden espacial que no se pudo verificar.
+
 ## Verificación independiente
 
 Un agente que no participó en el análisis recalculó 140 afirmaciones del informe a partir de los CSV (`verificacion_informe.md`): 124 coincidían, 13 tenían errores de redondeo, de agregación o de redacción, y 3 no eran verificables con los archivos. Las 13 se corrigieron en el informe. Los veredictos P1–P4 no cambian, salvo que el criterio de latencia de P4 pasa de «falla» a «inconcluso».

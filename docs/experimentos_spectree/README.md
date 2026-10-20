@@ -5,7 +5,7 @@
 **Pre-registro:** [`experiments/spectree/preregistro.md`](../../experiments/spectree/preregistro.md), commit `fd339fa`. Se fijó antes de ejecutar cualquier prueba.
 **Notas y desviaciones:** [`run_notes.md`](../../experiments/spectree/run_notes.md).
 
-> **Advertencia.** Todos los análisis se hicieron sobre NeonTreeEvaluation, un benchmark que ya se había inspeccionado al escribir el artículo. Son análisis sobre datos vistos, no una confirmación independiente. E07 es la única vía hacia una confirmación externa.
+> **Advertencia.** E00–E06 y E08–E10 se hicieron sobre NeonTreeEvaluation, un benchmark que ya se había inspeccionado al escribir el artículo. Son análisis sobre datos vistos, no una confirmación independiente. Además, el detector se ajustó con anotaciones de los sitios que aportan el 78 % de las parcelas (E07-A). La única prueba independiente es E07-B, sobre un conjunto externo con el protocolo congelado antes de consultarlo.
 
 **Configuración común:**
 - 189 parcelas de 20 sitios NEON;
@@ -26,6 +26,7 @@ Cada comparación primaria lleva un intervalo de Bonferroni al 98.75 %. El marge
 | **P2** (E03) | Selector elegido en validación interna frente a SBS | +0.015 [−0.007, +0.039] | **Inconclusa** |
 | **P3** (E02) | Filtro sintético calibrado con umbral ajustado frente a DeepForest sin filtro (ΔF1) | 0.000 [0, 0] | **No respaldada**: el umbral óptimo es «no filtrar» |
 | **P4** (E04) | LinUCB-F frente a DeepForest fijo: no inferioridad y menor latencia | ΔF1 −0.028 [−0.063, −0.000]; MAE ×1.13; Δt −0.04 s [−0.35, +0.14] | **No respaldada**: falla en F1 y en MAE; la menor latencia es inconclusa |
+| **E07** (externa, IC 95 %) | Selector-VI frente a SBS, ambos entrenados solo con NEON, en Campo Grande | 0.000 [0, 0] | **No inferior, pero trivial**: el selector elige siempre la acción del SBS |
 
 Ninguna de las cuatro afirmaciones centrales del sistema queda respaldada. La evidencia apunta en una dirección consistente:
 - el portafolio sí contiene margen de selección (el VBS supera al SBS en +0.067 [+0.046, +0.089]);
@@ -238,7 +239,39 @@ Hay una confusión con el sitio que conviene declarar: el estrato de baja densid
 
 ## E07: procedencia de NEON.pt y transferencia externa
 
-*(Sección completada con la auditoría de procedencia y la búsqueda de un conjunto externo; ver abajo.)*
+Detalle completo en [`e07_procedencia_y_externo.md`](../../experiments/spectree/e07_procedencia_y_externo.md). El protocolo ([`e07_protocolo.md`](../../experiments/spectree/e07_protocolo.md)) se congeló en el commit `3f31fab`, **antes** de leer las anotaciones externas.
+
+**A. Procedencia del detector.**
+- `NEON.pt` se preentrenó con pseudoetiquetas LiDAR de 24 sitios NEON, cuya lista no se publica.
+- Después se ajustó con anotaciones manuales de SJER, TEAK, NIWO, LENO, OSBS y MLBS.
+- **Esos seis sitios aportan 147 de nuestras 189 parcelas (78 %).**
+- Los autores declaran que no hay solape espacial con las parcelas de evaluación, pero no publican las teselas de entrenamiento. También advierten que el detector «se diseñó en conjunto» con el benchmark.
+
+En NEON, por tanto, DeepForest es **intra-dominio** a nivel de sitio, y su ventaja frente a las acciones clásicas probablemente está inflada.
+
+**B. Conjunto externo.** Zamboni et al. (2021): arbolado urbano de Campo Grande (Brasil). Son 220 parches RGB de 512 px a 10 cm y 3353 copas válidas. Ninguna escena puede estar en el entrenamiento del detector. Todas las políticas se entrenaron solo con NEON y se aplicaron sin ajuste.
+
+![E07](figs/e07_externo.png)
+
+| Política (entrenada con NEON) | Recompensa externa | en NEON | F1 | MAE | Δ frente a SBS [IC 95 %] |
+|---|---|---|---|---|---|
+| VBS externo (oráculo) | 0.501 | — | 0.544 | 2.5 | +0.393 [+0.367, +0.419] |
+| Ridge·V05 | **0.197** | 0.619 | 0.327 | 8.1 | **+0.090 [+0.061, +0.119]** |
+| LinUCB-F | 0.124 | 0.568 | 0.289 | 12.8 | +0.016 [−0.005, +0.039] |
+| Ridge·C0 | 0.120 | 0.624 | 0.271 | 9.4 | +0.012 [−0.011, +0.037] |
+| **SBS** (DeepForest s = 0.3) | **0.107** | 0.607 | 0.236 | 8.3 | — |
+| Selector-VI (ExtraTrees), regla barata | 0.107 | 0.621 / 0.607 | 0.236 | 8.3 | 0 (idéntico al SBS) |
+| DeepForest s = 0.1 | 0.080 | — | 0.241 | 9.7 | −0.027 [−0.049, −0.004] |
+
+Los intervalos salen del remuestreo de parches. Son optimistas porque los parches provienen de dos ortoimágenes, aunque el remuestreo por bloques da casi lo mismo.
+
+- **Comparación primaria (Selector-VI − SBS): 0.000, «no inferior» por regla, pero trivial.** ExtraTrees elige la acción del SBS en los 218 parches; no adapta nada fuera de su rango de entrenamiento.
+- **El detector no transfiere.** El SBS cae de 0.607 a 0.107, con F1 0.24. Las mejores acciones externas son cuencas clásicas a 7 m (0.33–0.34), que en NEON estaban en los puestos 17–18. La correlación de rangos entre NEON y el conjunto externo es 0.35.
+- **El margen de selección es seis veces mayor fuera de dominio:** +0.393 frente a +0.067.
+- **El 97.7 % de los contextos externos tiene algún descriptor fuera del intervalo p1–p99 de NEON.**
+- **Ridge·V05 es el único selector que aprovecha parte del margen** (exploratorio). Cierra el 23 % de la brecha y ahorra 1 s por parche. Se mantiene a IoU 0.3 y 0.5, en los tres terciles de densidad y en la partición de prueba de los autores.
+- **Fuera de dominio, V05 rinde más que C0** (exploratorio): Ridge +0.077 [+0.055, +0.100] y LinUCB-F +0.046 [+0.030, +0.063]. Es lo contrario de lo que pasa en NEON (P1). Los atributos añadidos son transformaciones no lineales del RGB (proposición 1), no información espectral nueva.
+- **Límites del dominio.** Es urbano, tropical, con otro sensor y año (2013) y otro protocolo de anotación (cajas desde polígonos). Parte de la caída de F1 puede venir de la anotación; el orden entre políticas no, porque todas usan las mismas etiquetas.
 
 ## E08: sensibilidad a la recompensa y al portafolio
 
@@ -304,6 +337,7 @@ Cada fila cruza un resultado posible del plan (§8) con lo que se observó:
 | La mejora desaparece al medir el tiempo total | El contexto cuesta solo 0.07 s; el problema es que no se evita DeepForest (E04) | — | «Usar menos DeepForest equivale a ser más eficiente» |
 | Una variante simple iguala al sistema | **Sí**: ExG lineal ≈ motor físico (E06); 4 acciones ≈ 40 (E08); Ridge ≥ LinUCB-F (E03) | Hay margen para simplificar | «Cada componente es necesario» |
 | El intervalo es amplio o cambia de signo entre sitios | **Sí** (E00, E05) | La evidencia no resuelve todavía la comparación | «Un método es superior en general» |
+| Una pérdida externa delimita la transferencia | **Sí** (E07): el SBS cae de 0.607 a 0.107; el margen VBS–SBS sube a +0.39; Ridge·V05 recupera +0.09 (exploratorio) | La selección importa más fuera de dominio, y un selector lineal simple captura parte del margen | «El detector de NEON generaliza»; «SpecTree transfiere» |
 
 **Recomendación.** Con esta evidencia, la versión defendible del artículo es un **estudio de límites**, no la propuesta de un sistema mejor. Lo que sí se sostiene:
 1. **Los atributos espectrales derivados de RGB no mejoran la selección.** Su correlación con el NDVI real es entre escenas, no dentro de ellas, y es negativa en dosel cerrado.
@@ -311,10 +345,12 @@ Cada fila cruza un resultado posible del plan (§8) con lo que se observó:
 3. **El margen de selección es real pero pequeño**, y está en bosques abiertos.
 4. **El aprendizaje con información parcial es el componente que más pierde.** Un selector supervisado simple (Ridge) con atributos RGB es la mejor opción observada, pero no concluyente.
 
+5. **Fuera de dominio el problema cambia** (E07). El detector por defecto se desploma, el margen de selección se multiplica por seis y solo un selector lineal (Ridge) recupera una parte. El hallazgo es exploratorio y viene de una sola ciudad, pero es lo más cercano a un argumento a favor de seleccionar acciones.
+
 Si se quiere conservar la propuesta de sistema, harían falta tres cosas:
-- otro régimen de selección (supervisado);
+- otro régimen de selección (supervisado y lineal, que extrapole);
 - un portafolio pequeño;
-- una confirmación externa (E07) congelada antes de consultarla.
+- una segunda confirmación externa, pre-registrada con Ridge·V05 frente a SBS como comparación primaria, en otro dominio no urbano.
 
 ## Reproducir
 
@@ -326,6 +362,9 @@ python experiments/spectree/e00_reproduccion.py <tabla v0.5 rewards.csv>
 for e in e01_contexto e03_selectores e05_dificultad e09_robustez e02_filtro e06_generador e08_sensibilidad e10_controles; do
   python experiments/spectree/$e.py; done
 python experiments/spectree/e04_latencia.py        # ejecutar solo en la máquina; ~25 min
+Z=<clon de github.com/pedrozamboni/individual_urban_tree_crown_detection @ db99883>
+python experiments/spectree/e07_externo.py --stage predict --ext $Z --weights $W   # 8 min, 2 núcleos
+python experiments/spectree/e07_externo.py --stage analyse --ext $Z
 python experiments/spectree/figuras_spectree.py
 ```
 

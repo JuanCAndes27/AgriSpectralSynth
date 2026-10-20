@@ -358,8 +358,24 @@ def stage_analyse(a):
     pd.DataFrame([{"n_parches": len(ext_ctx), "n_vacios": len(empty), "n_cajas": int(ext_ctx.n_true.sum()),
                    "cajas_degeneradas_descartadas": int(ext_ctx.n_degenerate_dropped.sum()),
                    "n_particion_autores0": len(test0)}]).to_csv(C.OUT / "e07_datos.csv", index=False)
+    ood_summary(ext_ctx)
     print(s.round(3).to_string(index=False))
     print(verdict, elegido)
+
+
+def ood_summary(ext_ctx):
+    """How far the external contexts fall outside the NEON training contexts (Mavic 3M rows)."""
+    import common as C
+
+    n = C.contexts()
+    n = n[n.sensor == SENSOR]
+    e = ext_ctx[ext_ctx.n_true > 0]
+    f = [x for x in C.context_features("V05") if not x.startswith("sensor_")]
+    lo, hi = n[f].quantile(0.01), n[f].quantile(0.99)
+    out = (e[f] < lo) | (e[f] > hi)
+    z = ((e[f] - n[f].mean()) / n[f].std()).median()
+    pd.DataFrame({"fuera_p1_p99": out.mean(), "z_mediana": z}).sort_values("fuera_p1_p99", ascending=False).assign(
+        parches_con_alguna_fuera=float(out.any(axis=1).mean())).to_csv(C.OUT / "e07_fuera_de_distribucion.csv")
 
 
 def main():
