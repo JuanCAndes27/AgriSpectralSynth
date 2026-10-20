@@ -102,7 +102,7 @@ def run_fold(T: RewardTable, train: np.ndarray, test: np.ndarray, seed: int, fol
     ridge = FullInfoRidge(n_arms, dim, rng).fit(Ztr, T.R[train])
     out.append(_score(T, test, np.array([ridge.greedy(z) for z in Zte]), "Ridge (información completa)", seed, fold))
 
-    for name, make in (policies or POLICIES).items():
+    for name, make in (POLICIES if policies is None else policies).items():
         if name.startswith("LinUCB factorizado"):
             pol = make(n_arms, dim, np.random.default_rng(seed), arms=T.arms)
         else:

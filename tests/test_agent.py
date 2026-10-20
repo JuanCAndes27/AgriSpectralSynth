@@ -9,7 +9,7 @@ import cv2
 import numpy as np
 import pytest
 
-from agrispectralsynth.agent.actions import ARM_INDEX, ARMS, make_signals, otsu_threshold, run_arm
+from agrispectralsynth.agent.actions import ARM_INDEX, ARMS, CLASSICAL_ARMS, make_signals, otsu_threshold, run_arm
 from agrispectralsynth.agent.bandit import (
     FactoredLinUCB, LinThompson, LinUCB, Standardizer, TrainedAgent, arm_factors,
 )
@@ -141,10 +141,10 @@ def test_otsu_separates_two_modes():
     assert 0.1 <= otsu_threshold(x) < 0.9
 
 
-def test_every_arm_runs_and_returns_boxes():
+def test_every_classical_arm_runs_and_returns_boxes():
     rgb, _ = forest()
     sig, _ = signals(rgb)
-    for arm in ARMS:
+    for arm in CLASSICAL_ARMS:
         b = run_arm(arm, sig, gsd_m=0.1)
         assert b.ndim == 2 and b.shape[1] == 4
 
@@ -199,8 +199,10 @@ def test_linear_bandits_learn_context(cls):
 def test_factored_bandit_and_factors():
     names = [a.name for a in ARMS]
     G = arm_factors(names)
-    assert G.shape == (len(ARMS), 11) and (G[:, 0] == 1).all()
-    assert G[names.index("cc_dark"), 3] == 1 and G[names.index("cc_dark"), 10] == 1   # dark, otsu
+    assert G.shape == (len(ARMS), 18) and (G[:, 0] == 1).all()
+    assert G[names.index("cc_dark"), 3] == 1 and G[names.index("cc_dark"), -1] == 1   # dark, otsu
+    df = G[names.index("df_hsi_s0.2")]
+    assert df[4] == 1 and df[9] == 1 and df[14] == 1 and df[-1] == 0                  # hsi, df, s0.2
     pol = FactoredLinUCB(len(ARMS), 4, np.random.default_rng(0), names)
     x = np.ones(4)
     a = pol.select(x)
@@ -238,9 +240,9 @@ def test_reward_table_and_protocol(tiny_benchmark):
     img_dir, ann_dir, out = tiny_benchmark
     s = build_reward_table(img_dir, ann_dir, out, RewardJob(sensors=["dji_mavic3m", "micasense_rededge_mx"]),
                            workers=1, progress=False)
-    assert s["images"] == 6 and s["contexts"] == 12 and s["rewards"] == 12 * len(ARMS)
+    assert s["images"] == 6 and s["contexts"] == 12 and s["rewards"] == 12 * len(CLASSICAL_ARMS)
     T = load_reward_table(out)
-    assert T.R.shape == (12, len(ARMS)) and not np.isnan(T.R).any()
+    assert T.R.shape == (12, len(CLASSICAL_ARMS)) and not np.isnan(T.R).any()
     # RGB-only arms are identical for both sensors of an image
     exg = T.arms.index("wsd_exg-otsu_4m")
     for im in np.unique(T.images):

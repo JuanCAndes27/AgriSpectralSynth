@@ -1,0 +1,5 @@
+sensor,ndvi_real,ndvi_sintetico,sesgo,rmse,r_mediana,rojo_real,rojo_sint,nir_real,nir_sint,r_pixeles
+dji_mavic3m,0.649,0.389,-0.26,0.316,0.438,0.055,0.187,0.247,0.395,0.672
+dji_phantom4m,0.641,0.382,-0.259,0.316,0.441,0.055,0.187,0.241,0.39,0.675
+micasense_rededge_mx,0.654,0.373,-0.281,0.337,0.454,0.053,0.193,0.242,0.39,0.675
+parrot_sequoia_plus,0.623,0.354,-0.268,0.328,0.455,0.055,0.191,0.227,0.373,0.68

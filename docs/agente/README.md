@@ -2,6 +2,8 @@
 
 El agente decide, **para cada escena**, qué método de delineación de copas usar, y aprende de una **recompensa** calculada contra copas anotadas a mano. Este documento describe el planteamiento, el diseño de la recompensa, el protocolo experimental y los resultados obtenidos (versión 0.4).
 
+> **Versión 0.5:** DeepForest como acción y datos hiperespectrales reales de NEON (conteo y validación del NDVI sintético) → [`neon_hiperespectral/README.md`](neon_hiperespectral/README.md).
+
 ## 1. Planteamiento
 
 Detectar copas en una imagen es un problema supervisado ya resuelto razonablemente bien. Aprenderlo "desde cero" con recompensas sería lento y peor que un detector entrenado con etiquetas. Lo que **no** está resuelto es otra pregunta: ningún método funciona igual en todos los bosques. Un umbral de verdor que separa bien coníferas densas falla en una sabana de robles sobre pasto seco, y un tamaño de copa de 2 m divide en pedazos un roble de 8 m.
@@ -152,10 +154,10 @@ El NDVI sintético se deriva de la propia foto RGB y de la librería espectral, 
 
 ## 8. Limitaciones y siguientes pasos
 
-- **Métodos clásicos.** F1 de 0.25–0.29 frente a 0.37 del oráculo. Un detector entrenado como DeepForest debería sumarse como acción adicional: el agente decidiría cuándo vale la pena pagarlo. Esto también permitiría activar el término de tiempo de la recompensa.
+- **Métodos clásicos.** F1 de 0.25–0.29 frente a 0.37 del oráculo. *Resuelto en la v0.5:* DeepForest como acción (F1 0.69 en sitios nuevos) y término de tiempo activo; ver [`neon_hiperespectral/`](neon_hiperespectral/README.md).
 - **Pocos sitios distintos (22) para generalizar.** MillionTrees tiene muchos más ecosistemas. El cargador de anotaciones ya lee sus polígonos WKT.
 - **Recompensa con cajas.** Las anotaciones del benchmark son rectángulos; con polígonos (MillionTrees) se puede pasar a IoU de máscara.
-- **Validación del NIR sintético.** NeonTreeEvaluation incluye hiperespectral NEON real de las mismas parcelas (`--with-hyperspectral`). Permite comparar el NDVI sintético con el real sin vuelos propios.
+- **Validación del NIR sintético.** *Hecho en la v0.5* con el hiperespectral NEON de las mismas parcelas: r = 0.67 píxel a píxel y sesgo de −0.26 en NDVI ([`neon_hiperespectral/`](neon_hiperespectral/README.md#2-validación-del-simulador-ndvi-sintético-frente-a-ndvi-real)).
 - **Políticas no lineales** (bosques aleatorios, redes pequeñas) con la misma recompensa, si se dispone de más sitios.
 
 ## 9. Reproducir

@@ -6,7 +6,8 @@ Download the NeonTreeEvaluation benchmark (RGB + crown annotations).
     python scripts/download_neontree_benchmark.py --with-hyperspectral
 
 Only the 194 evaluation plots that have hand annotations are fetched
-(~110 MB RGB). Requires git >= 2.27. Data licence: CC0 1.0.
+(~110 MB RGB, +265 MB with --with-hyperspectral). Requires git >= 2.27.
+Data licence: CC0 1.0.
 
 Benchmark: Weinstein, B. G. et al. (2021). A benchmark dataset for canopy
 crown detection and delineation in co-registered airborne RGB, LiDAR and
@@ -54,7 +55,9 @@ def main() -> int:
     stems = sorted(ann & rgb)
     paths = [f"annotations/{s}.xml" for s in stems] + [f"evaluation/RGB/{s}.tif" for s in stems]
     if a.with_hyperspectral:
+        # 1 m NEON AOP reflectance (426 bands, 380-2510 nm) co-registered with each RGB plot
         paths += [f for f in files if f.startswith("evaluation/Hyperspectral/") and Path(f).stem.replace("_hyperspectral", "") in stems]
+        paths += ["neon_aop_bands.csv"]
     if a.with_chm:
         paths += [f for f in files if f.startswith("evaluation/CHM/") and Path(f).stem.replace("_CHM", "") in stems]
     paths += ["LICENSE", "README.md"]

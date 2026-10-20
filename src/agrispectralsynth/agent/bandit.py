@@ -126,22 +126,30 @@ class EpsilonGreedy(_LinearArms):
         return self.greedy(x)
 
 
-def arm_factors(arm_names: List[str]) -> np.ndarray:
-    """One-hot design of each arm's components: bias, signal, algorithm, crown size, threshold.
+FACTOR_SIGNALS = ("ndvi", "exg", "dark", "hsi", "rgb")
+FACTOR_ALGOS = ("cc", "wsd", "lmw", "df")
+FACTOR_SIZES = ("2m", "4m", "7m")
+FACTOR_SCORES = ("s0.1", "s0.2", "s0.3", "s0.4")
 
-    Arm names follow actions.py, e.g. 'wsd_exg-otsu_4m', 'cc_dark', 'lmw_ndvi_2m'.
+
+def arm_factors(arm_names: List[str]) -> np.ndarray:
+    """One-hot design of each arm's components: bias, signal, algorithm, crown size, detector score, Otsu.
+
+    Arm names follow actions.py, e.g. 'wsd_exg-otsu_4m', 'cc_dark', 'df_hsi_s0.2'.
     """
     rows = []
     for name in arm_names:
         parts = name.split("_")
         algo, sig = parts[0], parts[1]
-        signal, thr = (sig.split("-") + ["fixed"])[:2] if "-" in sig else (sig, "otsu" if sig == "dark" else "fixed")
-        size = parts[2] if len(parts) > 2 else "none"
-        rows.append([1.0,
-                     signal == "ndvi", signal == "exg", signal == "dark",
-                     algo == "cc", algo == "wsd", algo == "lmw",
-                     size == "2m", size == "4m", size == "7m",
-                     thr == "otsu"])
+        signal = sig.split("-")[0]
+        otsu = sig.endswith("-otsu") or signal == "dark"
+        third = parts[2] if len(parts) > 2 else ""
+        rows.append([1.0]
+                    + [signal == x for x in FACTOR_SIGNALS]
+                    + [algo == x for x in FACTOR_ALGOS]
+                    + [third == x for x in FACTOR_SIZES]
+                    + [third == x for x in FACTOR_SCORES]
+                    + [otsu])
     return np.asarray(rows, dtype=np.float64)
 
 
@@ -269,9 +277,13 @@ class TrainedAgent:
     theta: np.ndarray            # (n_arms, dim + 1)
     meta: dict
 
-    def choose(self, feature_vector: np.ndarray) -> str:
+    def choose(self, feature_vector: np.ndarray, allowed=None) -> str:
+        """Best arm by expected reward; ``allowed`` restricts the choice (e.g. no hyperspectral at hand)."""
         z = Standardizer(self.mean, self.std)(feature_vector)[0]
-        return self.arms[int(np.argmax(self.theta @ z))]
+        scores = self.theta @ z
+        if allowed is not None:
+            scores = np.where([a in allowed for a in self.arms], scores, -np.inf)
+        return self.arms[int(np.argmax(scores))]
 
     def expected_rewards(self, feature_vector: np.ndarray) -> dict:
         z = Standardizer(self.mean, self.std)(feature_vector)[0]
