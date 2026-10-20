@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+message: "Si usas este software, por favor cítalo así."
+title: "AgriSpectralSynth: simulador multiespectral desde RGB aéreo y agente para delinear y contar copas"
+version: 0.4.0
+date-released: 2026-10-08
+license: MIT
+repository-code: "https://github.com/JuanCAndes27/AgriSpectralSynth"
+authors:
+  - family-names: Vega
+    given-names: Juan Carlos
+keywords:
+  - remote sensing
+  - multispectral
+  - NDVI
+  - tree crown detection
+  - contextual bandit
+  - PROSAIL
