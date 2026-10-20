@@ -232,8 +232,49 @@ def fig_resolucion():
     plt.close(fig)
 
 
+def fig_externo():
+    a = pd.read_csv(C.OUT / "e07_acciones.csv")
+    s = pd.read_csv(C.OUT / "e07_resumen.csv")
+    fam_c = {"DF": BLUE, "DF+NDVIsint": PURPLE, "Clas-RGB": ORANGE, "Clas-NDVIsint": GREEN}
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(9.6, 3.9), gridspec_kw={"width_ratios": [1, 1.15]})
+    for fam, g in a.groupby("familia"):
+        ax1.scatter(g.reward_neon_macro, g.reward_ext, s=22, color=fam_c[fam], label=fam, edgecolor="white", lw=0.5)
+    lim = [min(a.reward_neon_macro.min(), a.reward_ext.min()) - 0.03, max(a.reward_neon_macro.max(), a.reward_ext.max()) + 0.03]
+    ax1.plot(lim, lim, color=GRAY, lw=1, ls="--")
+    ax1.set_xlabel("Recompensa en NEON (macro por sitio, Mavic 3M)")
+    ax1.set_ylabel("Recompensa externa (Campo Grande)")
+    ax1.set_title("Cada acción fija: NEON frente a externo", fontsize=9, loc="left")
+    ax1.legend(frameon=False, fontsize=7.5, loc="upper left")
+    ax1.grid(color=GRID, lw=0.6)
+    ax1.set_axisbelow(True)
+    keep = ["VBS-ext", "Selector-VI", "Trees", "Ridge", "Ridge·C0", "CheapRule", "LinUCB-F", "SBS", "DF-defecto"]
+    s = s.set_index("policy").loc[[k for k in keep if k in s.policy.values]].reset_index()
+    lab = {"VBS-ext": "VBS externo (oráculo)", "CheapRule": "Regla barata", "DF-defecto": "DeepForest s=0.1"}
+    y = np.arange(len(s))[::-1]
+    ax2.barh(y, s.reward, color=[GRAY if p == "VBS-ext" else (INK2 if p == "SBS" else BLUE) for p in s.policy], height=0.6)
+    for yi, p, r in zip(y, s.policy, s.reward):
+        if p == "SBS" or pd.isna(s.set_index("policy").neon_reward_macro.get(p, np.nan)):
+            continue
+        ax2.plot(s.set_index("policy").neon_reward_macro[p], yi, "|", color=ORANGE, ms=12, mew=2)
+    ax2.plot([], [], "|", color=ORANGE, ms=10, mew=2, label="misma política en NEON (VC por sitio)")
+    sbs_neon = s.set_index("policy").neon_reward_macro.get("SBS", np.nan)
+    if not pd.isna(sbs_neon):
+        ax2.plot(sbs_neon, y[list(s.policy).index("SBS")], "|", color=ORANGE, ms=12, mew=2)
+    ax2.set_yticks(y)
+    ax2.set_yticklabels([lab.get(p, p) for p in s.policy])
+    ax2.set_xlabel("Recompensa media por parche")
+    ax2.set_title("Políticas entrenadas solo con NEON", fontsize=9, loc="left")
+    ax2.legend(frameon=False, fontsize=7.5, loc="lower right")
+    ax2.grid(axis="x", color=GRID, lw=0.6)
+    ax2.set_axisbelow(True)
+    fig.tight_layout()
+    fig.savefig(FIG / "e07_externo.png")
+    plt.close(fig)
+
+
 if __name__ == "__main__":
-    for f in (fig_selectores, fig_contexto, fig_filtro, fig_estratos, fig_generador, fig_sensibilidad, fig_latencia, fig_resolucion):
+    for f in (fig_selectores, fig_contexto, fig_filtro, fig_estratos, fig_generador, fig_sensibilidad, fig_latencia, fig_resolucion,
+              fig_externo):
         try:
             f()
             print("ok", f.__name__)
